@@ -1,9 +1,13 @@
 import unittest
 
+from Server import Server
+
 
 class MyTestCase(unittest.TestCase):
     def test_something(self):
-        self.assertEqual(True, False)
+        server = Server()
+
+
 
 
 if __name__ == '__main__':
