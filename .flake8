@@ -13,7 +13,7 @@ jobs = auto
 # Increase the verbosity of Flake8’s output.
 verbose = 0
 # Decrease the verbosity of Flake8’s output.
-quiet = 1
+quiet = 0
 
 
 ########## FORMATTING ##########
@@ -42,16 +42,16 @@ tee = True
 # Provide a comma-separated list of glob patterns to exclude from checks.
 exclude =
 # git folder
-	.git,
+    .git,
 # github actions folder
-	.github,
+    .github,
 # python cache
-	__pycache__,
+    __pycache__,
 # virtual environment
-	venv,
-	# project misc
-	assets,
-	data,
+    venv,
+    # project misc
+    assets,
+    data,
 
 
 
@@ -89,13 +89,13 @@ hang-closing = True
 
 # Specify a list of codes to ignore.
 ignore =
-	W503
+    W503
 # Specify the list of error codes you wish Flake8 to report.
 select =
-	E,
-	W,
-	F,
-	C
+    E,
+    W,
+    F,
+    C
 # Enable off-by-default extensions.
 enable-extensions =
 
