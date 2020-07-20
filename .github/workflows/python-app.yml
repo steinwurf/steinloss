@@ -5,10 +5,10 @@ name: Python application
 on:
   push:
     branches:
-      - github_action
+      - master
   pull_request:
     branches:
-      - github_action
+      - master
 
 jobs:
   build:
