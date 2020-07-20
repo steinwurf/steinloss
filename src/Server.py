@@ -2,10 +2,30 @@ import csv
 import threading
 from socket import *
 import time
-from fractions import Fraction
+
+from Csv_Logger import Csv_Logger
 
 DECREASE_RATIO = 0.95
 ONE_SECOND = 1
+
+log = Csv_Logger()
+
+
+class PacketSenderThread(threading.Thread):
+	def __init__(self, group=None, target=None, name=None,
+				 args=(), kwargs=None, verbose=None):
+		super(PacketSenderThread, self).__init__()
+		self.target = target
+		self.name = name
+
+
+class PacketLoggerThread(threading.Thread):
+	def __init__(self, group=None, target=None, name=None,
+				 args=(), kwargs=None, verbose=None):
+		super(PacketLoggerThread, self).__init__()
+		self.target = target
+		self.name = name
+		return
 
 
 class Server(object):
@@ -22,9 +42,9 @@ class Server(object):
 		server_socket = socket(AF_INET, SOCK_DGRAM)
 		# Assign IP address and port number to socket
 		server_socket.bind(listening_address)
-		with open('server_stats.csv', 'w', newline='') as file:
+		with open('../data/server_stats.csv', 'w', newline='') as file:
 			writer = csv.writer(file)
-			writer.writerow(["packets"])
+			writer.writerow(["packets", "timestamp"])
 		print("Server ready at: %s %s" % listening_address)
 
 		request_and_address = server_socket.recvfrom(1024)
@@ -64,6 +84,6 @@ class Server(object):
 
 	def post_results(self):
 		threading.Timer(1.0, self.post_results).start()
-		with open('server_stats.csv', 'a', newline='') as file:
+		with open('../data/server_stats.csv', 'a', newline='') as file:
 			writer = csv.writer(file)
-			writer.writerow([self.id])
+			writer.writerow([self.id, time.strftime("%H:%M:%S", time.localtime())])

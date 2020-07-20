@@ -43,7 +43,7 @@ def poster(counter):
 		if _FINISH:
 			break
 		val = counter.value()
-		with open('client_stats.csv', 'a', newline='') as file:
+		with open('../data/client_stats.csv', 'a', newline='') as file:
 			writer = csv.writer(file)
 			writer.writerow([val])
 		time.sleep(0.5)
@@ -51,7 +51,7 @@ def poster(counter):
 
 def run():
 	counter = Counter()
-	with open('client_stats.csv', 'w', newline='') as file:
+	with open('../data/client_stats.csv', 'w', newline='') as file:
 		writer = csv.writer(file)
 		writer.writerow(["packets"])
 	global _FINISH

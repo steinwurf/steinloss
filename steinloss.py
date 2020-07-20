@@ -1,7 +1,7 @@
 import sys
 
-from Client import run as c_run
-from Server import Server
+from src.Client import run as c_run
+from src.Server import Server
 
 
 class Steinloss:
