@@ -3,12 +3,12 @@ import threading
 import socket
 import time
 
-from src.data_logger import Data_Logger
+from src.entity_logger import Entity_Logger
 
 DECREASE_RATIO = 0.95
 ONE_SECOND = 1
 
-log = Data_Logger()
+log = Entity_Logger()
 
 
 class PacketSenderThread(threading.Thread):

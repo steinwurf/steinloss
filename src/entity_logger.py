@@ -1,9 +1,10 @@
+import csv
 from os import path
 
 from src.util import get_project_root
 
 
-class Data_Logger:
+class Entity_Logger:
     def __init__(self, filename):
         self.filepath = self.generate_filepath_from_filename(filename)
         self.create_file(filename)
@@ -25,3 +26,8 @@ class Data_Logger:
     @filepath.setter
     def filepath(self, x):
         self.__filepath = x
+
+    def log(self, entity):
+        with open(self.filepath, 'a', ) as file:
+            writer = csv.writer(file)
+            writer.writerow([entity.id, str(entity.time)])
