@@ -3,21 +3,17 @@ import pytest
 from src.Server import Server
 from src.packet_entity import Packet_entity
 
+kilobyte = 1024
 
-def test_two_kilobytes_should_set_interval_to_half():
-    two_kilobytes = 2048
+
+@pytest.mark.parametrize(
+    "speed, interval", [(kilobyte, 1), (2 * kilobyte, 0.5), (4 * kilobyte, 0.25)]
+)
+def test_two_kilobytes_should_set_interval_to_half(speed, interval):
     server = Server()
-    server.speed = two_kilobytes
+    server.speed = speed
 
-    assert server.interval == 0.5
-
-
-def test_four_kilobytes_should_set_interval_to_quarter():
-    four_kilobytes = 4096
-    server = Server()
-    server.speed = four_kilobytes
-
-    assert server.interval == 0.25
+    assert server.interval == interval
 
 
 def test_construct_server_with_five_kilobytes():
@@ -64,6 +60,10 @@ def test_send_packet_should_call_socket_sendto(mocker):
     server.send_packet()
 
     assert mocked_socket.call_count == 1
+
+
+def test_serve_packets_should_respond_to_probe():
+    server = Server()
 
 
 class FakeTime:
