@@ -1,6 +1,6 @@
 class Packet_entity:
-    def __init__(self, id, time):
-        self.id = id
+    def __init__(self, packet_content, time):
+        self.id = packet_content
         self.time = time
 
     def __eq__(self, other):

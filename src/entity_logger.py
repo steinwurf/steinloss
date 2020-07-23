@@ -1,5 +1,4 @@
 import csv
-from datetime import time
 from os import path
 from typing import List
 
