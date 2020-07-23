@@ -1,24 +1,32 @@
-import csv
-import threading
+import asyncio
 import socket
+from datetime import datetime
+from typing import Tuple
 import time
 
+from src.entity_logger import Entity_Logger
 from src.packet_entity import Packet_entity
 
 ONE_SECOND = 1
 
+kilobyte = 1024
+megabyte = 1024 * kilobyte
+
 
 class Server:
-    kilobyte = 1024
-    megabyte = 1024 * kilobyte
-
     packet_size = kilobyte
 
-    def __init__(self, x=kilobyte):
-        self.Entries = []
+    def __init__(self, speed=kilobyte, listening_address=("127.0.0.1", 7070)):
+        self.log_interval = 1
+        self.test_is_running = False
+        self.__logger = None
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.listening_address = listening_address
+        self.entries = []
         self.id = 0
+        self.probe_address = None
         self.interval = 1
-        self.speed = x
+        self.speed = speed
 
     @property
     def speed(self):
@@ -28,15 +36,25 @@ class Server:
     def speed(self, value):
         self.interval = self.packet_size / value
 
-    def send_packet(self):
+    @property
+    def logger(self):
+        if self.__logger is None:
+            self.__logger = Entity_Logger('server_stats')
+        return self.__logger
+
+    @logger.setter
+    def logger(self, value):
+        self.__logger = value
+
+    def send_packet(self, address):
+        packet = "%d" % self.id
+        self.server_socket.sendto(packet.encode(), address)
+
+        self.id += 1
         self.save_entry()
-        server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        adresse = '0.0.0.0', 7070
-        server_socket.sendto('1'.encode(), adresse)
 
     def save_entry(self):
-        self.Entries.append(Packet_entity(self.id, time.time()))
-        self.id += 1
+        self.entries.append(Packet_entity(self.id, datetime.now()))
 
     def send_for_n_seconds(self, seconds):
         start_timestamp = time.time()
@@ -47,28 +65,37 @@ class Server:
     # while loop
     # setup interval
     # def logger
-    def serve_packets(self):
-        listening_address = ("127.0.0.1", 7070)
-        # Create a UDP socket
-        server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        # Assign IP address and port number to socket
-        server_socket.bind(listening_address)
-        print("Server ready at: %s %s" % listening_address)
+    def run(self):
+        self.ready_socket()
 
-        request_and_address = server_socket.recvfrom(1024)
-        address = request_and_address[1]
+        print("Server ready at: %s %s" % self.listening_address)
+        request_and_address = self.server_socket.recvfrom(1024)
+        address: Tuple[str, int] = request_and_address[1]
         print("Request from %s %d" % address)
 
-        self.post_results()
-        while True:
-            packet = "%d" % self.id
-            server_socket.sendto(packet.encode(), address)
-            self.id += 1
-            self.wait_interval()
+        self.serve_packets(address)
 
-    def wait_interval(self):
-        print(self.interval)
-        time.sleep(self.interval)
+    def ready_socket(self):
+        try:
+            # Assign IP address and port number to socket
+            self.server_socket.bind(self.listening_address)
+        except socket.error as error:
+            exit("[ERROR] %s\n" % error)
+
+    def serve_packets(self, address):
+        # https://docs.python.org/3/whatsnew/3.8.html : asyncio.run(main)
+        try:
+            self.test_is_running = True
+            loop = asyncio.get_event_loop()
+            loop.create_task(self.serve_forever(address))
+            loop.create_task(self.log_forever())
+            loop.run_forever()
+        except KeyboardInterrupt:
+            self.shutdown()
+
+    def add_tasks_to_loop(self, loop, address):
+
+        return loop
 
     def print_speed(self):
         hertz = ONE_SECOND / self.speed
@@ -78,8 +105,19 @@ class Server:
 
         pass
 
-    def post_results(self):
-        threading.Timer(1.0, self.post_results).start()
-        with open('../data/server_stats.csv', 'a', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow([self.id, time.strftime("%H:%M:%S", time.localtime())])
+    async def log_forever(self):
+        start_time = time.time()
+        while True:
+            self.logger.log(self.entries)
+            self.entries = []
+            await asyncio.sleep(self.log_interval - (time.time() - start_time) % self.log_interval)
+
+    async def serve_forever(self, address):
+        start_time = time.time()
+        while True:
+            self.send_packet(address)
+
+            await asyncio.sleep(self.interval - (time.time() - start_time) % self.interval)
+
+    def shutdown(self):
+        pass
