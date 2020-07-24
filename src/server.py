@@ -3,9 +3,9 @@ import socket
 from datetime import datetime
 from typing import Tuple
 import time
-
 from src.entity_logger import Entity_Logger
 from src.packet_entity import Packet_entity
+from src.util import repeat
 
 ONE_SECOND = 1
 
@@ -16,7 +16,7 @@ megabyte = 1024 * kilobyte
 class Server:
     packet_size = kilobyte
 
-    def __init__(self, speed=kilobyte, listening_address=("127.0.0.1", 7070)):
+    def __init__(self, speed=4 * kilobyte, listening_address=("127.0.0.1", 7070)):
         self.socket_timeout = 30  # seconds
         self.log_interval = 1
         self.test_is_running = False
@@ -61,11 +61,20 @@ class Server:
     # setup interval
     # def logger
     def run(self):
+        try:
+            asyncio.run(self.main())
+        except KeyboardInterrupt:
+            pass
+        finally:
+            self.shutdown()
+
+    async def main(self):
+        logging_thread = asyncio.ensure_future(repeat(self.test_front_end_log, self.log_interval))
         self.ready_socket()
 
         address = self.wait_for_probe()
-
-        self.serve_packets(address)
+        await self.serve_forever(address)
+        await logging_thread
 
     def wait_for_probe(self):
         self.server_socket.settimeout(self.socket_timeout)
@@ -95,14 +104,14 @@ class Server:
             self.test_is_running = True
             loop = asyncio.get_event_loop()
             loop.create_task(self.serve_forever(address))
-            loop.create_task(self.log_forever())
+            loop.create_task(self.test_front_end_log())
             loop.run_forever()
         except KeyboardInterrupt:
             self.shutdown()
 
-    def add_tasks_to_loop(self, loop, address):
-
-        return loop
+    async def test_front_end_log(self):
+        print(datetime.now().strftime("%H:%M:%S"))
+        print(len(self.entries))
 
     def print_speed(self):
         hertz = ONE_SECOND / self.speed
@@ -127,4 +136,5 @@ class Server:
             await asyncio.sleep(self.interval - (time.time() - start_time) % self.interval)
 
     def shutdown(self):
-        pass
+        self.server_socket.close()
+        exit(1)

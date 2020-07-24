@@ -4,7 +4,7 @@ from datetime import datetime
 from math import ceil
 
 import pytest
-from src.Server import Server
+from src.server import Server
 from src.packet_entity import Packet_entity
 
 kilobyte = 1024
@@ -50,15 +50,13 @@ def test_send_packet_should_call_socket_sendto(mocker):
     assert mocked_socket.call_count == 1
 
 
-def test_run_should_respond_to_probe(mocker):
+def test_wait_for_probe_should_return_address_of_probe(mocker):
     server = Server()
 
     fake_address = ('0,1,2,3', 4321)
-    mocked_server_packets = mocker.patch('src.Server.Server.serve_packets')
     mocker.patch('socket.socket.recvfrom', return_value=['packet', fake_address])
 
-    server.run()
-    mocked_server_packets.assert_called_once_with(fake_address)  # assert
+    assert server.wait_for_probe() == fake_address
 
 
 def test_socket_bind_throws_exception_should__exit(mocker):
@@ -97,7 +95,7 @@ async def test_log_forever_should_log_twice_after_two_second(mocker, event_loop)
     "speed, duration", [(4096, 0.2), (196608, 0.1)]
 )
 async def test_serve_forever_should_send_packets_according_to_speed(mocker, event_loop, speed, duration):
-    mocked_sendto = mocker.patch('src.Server.Server.send_packet')
+    mocked_sendto = mocker.patch('src.server.Server.send_packet')
 
     server = Server(speed=speed)
 
