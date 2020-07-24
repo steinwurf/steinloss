@@ -28,21 +28,6 @@ def test_construct_server_with_five_kilobytes():
 
 
 @pytest.mark.parametrize(
-    "speed,packets_send", [(1024, 1), (2048, 2), (4096, 4)]
-)
-def test_send_packets_at_n_kilobytes_should_send_n_times(mocker, speed, packets_send):
-    fake_time = FakeTime()
-    mocker.patch('time.time', new=fake_time.time)
-    mocker.patch('time.sleep', new=fake_time.sleep)
-    mocked_run = mocker.patch('src.Server.Server.send_packet')
-
-    server = Server(speed)
-    server.send_for_n_seconds(1)
-
-    assert mocked_run.call_count == packets_send
-
-
-@pytest.mark.parametrize(
     "index, packet_id", [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5)]
 )
 def test_send_packet_should_save_entry(mocker, index, packet_id, freezer):
@@ -112,7 +97,7 @@ async def test_log_forever_should_log_twice_after_two_second(mocker, event_loop)
     "speed, duration", [(4096, 0.2), (196608, 0.1)]
 )
 async def test_serve_forever_should_send_packets_according_to_speed(mocker, event_loop, speed, duration):
-    mocked_sendto = mocker.patch('socket.socket.sendto')
+    mocked_sendto = mocker.patch('src.Server.Server.send_packet')
 
     server = Server(speed=speed)
 
@@ -120,6 +105,10 @@ async def test_serve_forever_should_send_packets_according_to_speed(mocker, even
     await asyncio.sleep(duration, loop=event_loop)
 
     assert mocked_sendto.call_count == ceil(speed * duration / kilobyte)
+
+
+# interupt run forever should call shutdown
+# shutdown should log rest, and close socket
 
 
 class FakeTime:

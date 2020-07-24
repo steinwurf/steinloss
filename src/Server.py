@@ -17,6 +17,7 @@ class Server:
     packet_size = kilobyte
 
     def __init__(self, speed=kilobyte, listening_address=("127.0.0.1", 7070)):
+        self.socket_timeout = 30  # seconds
         self.log_interval = 1
         self.test_is_running = False
         self.__logger = None
@@ -56,24 +57,28 @@ class Server:
     def save_entry(self):
         self.entries.append(Packet_entity(self.id, datetime.now()))
 
-    def send_for_n_seconds(self, seconds):
-        start_timestamp = time.time()
-        while time.time() < start_timestamp + seconds:
-            self.send_packet()
-            time.sleep(self.interval)
-
     # while loop
     # setup interval
     # def logger
     def run(self):
         self.ready_socket()
 
-        print("Server ready at: %s %s" % self.listening_address)
-        request_and_address = self.server_socket.recvfrom(1024)
-        address: Tuple[str, int] = request_and_address[1]
-        print("Request from %s %d" % address)
+        address = self.wait_for_probe()
 
         self.serve_packets(address)
+
+    def wait_for_probe(self):
+        self.server_socket.settimeout(self.socket_timeout)
+        try:
+            print("Server ready at: %s %s" % self.listening_address)
+            request_and_address = self.server_socket.recvfrom(1024)
+
+            address: Tuple[str, int] = request_and_address[1]
+            print("Request from %s %d" % address)
+            return address
+        except socket.timeout:
+            print("Server timeout. Client didn't connect to server")
+            self.shutdown()
 
     def ready_socket(self):
         try:
@@ -81,6 +86,8 @@ class Server:
             self.server_socket.bind(self.listening_address)
         except socket.error as error:
             exit("[ERROR] %s\n" % error)
+
+    # def new_loop(self):
 
     def serve_packets(self, address):
         # https://docs.python.org/3/whatsnew/3.8.html : asyncio.run(main)
