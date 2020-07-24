@@ -5,3 +5,4 @@ dash~=1.13.4
 
 Flask~=1.1.2
 mock~=4.0.2
+timeloop

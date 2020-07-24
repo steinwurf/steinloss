@@ -1,33 +1,36 @@
 import sys
+from src.probe import Probe
+from src.server import Server
 
-from src.Client import run as c_run
-from src.Server import Server
+
+class TaskFactory:
+    @staticmethod
+    def create_task(first_arg):
+        options = {
+            's': Server,
+            'p': Probe,
+            'h': Help
+        }
+        if options[first_arg]() is None:
+            return Help()
+        return options[first_arg]()
 
 
 class Steinloss:
 
     @staticmethod
-    def server():
-        one_second = 1
-        server = Server(one_second)
-        server.serve_packets()
-        pass
-
-    @staticmethod
-    def client():
-        c_run()
-
-    @staticmethod
     def run():
-
-        if len(sys.argv) > 1:
-            Steinloss.server()
-        else:
-            Steinloss.client()
-
-    pass
+        task = TaskFactory.create_task(sys.argv[0])
+        task.run()
 
 
-# socket = socket(AF_INET, SOCK_DGRAM)
+class Help(object):
+    def run(self):
+        help_msg = """
+        run the program with either '-p' for probe or '-s' for server
+        """
+
+        print(help_msg)
+
 
 Steinloss.run()
