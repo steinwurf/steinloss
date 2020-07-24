@@ -34,4 +34,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Test with pytest
         run: |
+          if [ -f tests/requirements.txt ]; then pip install -r tests/requirements.txt; fi
           pytest
