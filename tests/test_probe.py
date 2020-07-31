@@ -4,12 +4,13 @@ import pytest
 from src.probe import Probe
 
 
-@pytest.fixture(autouse=True)
-def e(monkeypatch, mocker):
-    monkeypatch.setattr(socket, 'socket', mocker.patch('socket.socket'))
-
-
+@pytest.mark.usefixtures('socket')
 class Test_probe:
+
+    @pytest.fixture(autouse=True)
+    def mock_env_socket(mocker, monkeypatch):
+        monkeypatch.setattr(socket, 'socket', return_value=mocker.patch('socket.socket'))
+
     def setup_method(self):
         self.probe = Probe(('fake_address', 1337))
 

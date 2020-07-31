@@ -5,43 +5,48 @@ from typing import Tuple
 import time
 from src.entity_logger import Entity_Logger
 from src.packet_entity import Packet_entity
-from src.util import repeat
 
 ONE_SECOND = 1
 
 kilobyte = 1024
 megabyte = 1024 * kilobyte
+gigabyte = 1048576 * kilobyte
 
 
 class Server:
     packet_size = kilobyte
 
-    def __init__(self, speed=4 * kilobyte, listening_address=("127.0.0.1", 7070)):
-        self.socket_timeout = 30  # seconds
+    def __init__(self, speed=megabyte, listening_address=('0.0.0.0', 7070),
+                 time_of_sample_size=ONE_SECOND * 60 * 4):
+        self.time_of_sample_size = time_of_sample_size
+        self.socket_timeout = 10  # seconds
         self.log_interval = 1
-        self.test_is_running = False
         self.__logger = None
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.listening_address = listening_address
-        self.entries = []
+        self.outgoing_packets = []
+        self.incoming_packets = []
         self.id = 0
-        self.probe_address = None
-        self.interval = 1
+        self.__interval = 1
         self.speed = speed
 
     @property
     def speed(self):
-        return 1 / self.interval * self.packet_size
+        return 1 / self.__interval * self.packet_size
 
     @speed.setter
     def speed(self, value):
-        self.interval = self.packet_size / value
+        self.__interval = self.packet_size / value
 
     @property
     def logger(self):
         if self.__logger is None:
             self.__logger = Entity_Logger('server_stats')
         return self.__logger
+
+    @property
+    def interval(self):
+        return self.__interval
 
     @logger.setter
     def logger(self, value):
@@ -55,26 +60,41 @@ class Server:
         self.save_entry()
 
     def save_entry(self):
-        self.entries.append(Packet_entity(self.id, datetime.now()))
+        self.outgoing_packets.append(Packet_entity(self.id, datetime.now()))
 
     # while loop
     # setup interval
     # def logger
     def run(self):
+        self.ready_socket()
+        address = self.wait_for_probe()
+        # try:
+        self.run_loop(address)
+
+    def run_loop(self, address):
+
+        # loop part
+        loop = asyncio.get_event_loop()
+
+        listen_task = loop.create_datagram_endpoint(
+            lambda: EchoServerProtocol(self),
+            sock=self.server_socket
+        )
+        transport, protocol = loop.run_until_complete(listen_task)
+
+        loop.create_task(self.log_forever())
+
+        loop.create_task(self.serve_forever(address))
+
+        ## running part
+        print('loop is running')
         try:
-            asyncio.run(self.main())
+            loop.run_until_complete(asyncio.sleep(self.time_of_sample_size))
         except KeyboardInterrupt:
             pass
-        finally:
-            self.shutdown()
-
-    async def main(self):
-        logging_thread = asyncio.ensure_future(repeat(self.test_front_end_log, self.log_interval))
-        self.ready_socket()
-
-        address = self.wait_for_probe()
-        await self.serve_forever(address)
-        await logging_thread
+        print()
+        transport.close()
+        self.shutdown()
 
     def wait_for_probe(self):
         self.server_socket.settimeout(self.socket_timeout)
@@ -83,11 +103,13 @@ class Server:
             request_and_address = self.server_socket.recvfrom(1024)
 
             address: Tuple[str, int] = request_and_address[1]
-            print("Request from %s %d" % address)
+            print(f"Request from {address[0]}{address[1]}")
+            print()
             return address
-        except socket.timeout:
+        except socket.timeout as e:
             print("Server timeout. Client didn't connect to server")
-            self.shutdown()
+            print(e)
+            return '192.168.0.144', 7071
 
     def ready_socket(self):
         try:
@@ -96,45 +118,47 @@ class Server:
         except socket.error as error:
             exit("[ERROR] %s\n" % error)
 
-    # def new_loop(self):
+    def test_front_end_log(self):
+        outgoing_packets = len(self.outgoing_packets)
+        incoming_packets = len(self.incoming_packets)
+        packet_loss = self.calculate_packet_loss()
 
-    def serve_packets(self, address):
-        # https://docs.python.org/3/whatsnew/3.8.html : asyncio.run(main)
-        try:
-            self.test_is_running = True
-            loop = asyncio.get_event_loop()
-            loop.create_task(self.serve_forever(address))
-            loop.create_task(self.test_front_end_log())
-            loop.run_forever()
-        except KeyboardInterrupt:
-            self.shutdown()
-
-    async def test_front_end_log(self):
-        print(datetime.now().strftime("%H:%M:%S"))
-        print(len(self.entries))
-
-    def print_speed(self):
-        hertz = ONE_SECOND / self.speed
-        bytes_per_second = hertz * self.packet_size
-        mb_per_second = bytes_per_second / 1000000
-        print("%f Mb/s" % round(mb_per_second))
-
-        pass
+        print(
+            f"{outgoing_packets} packets send | {incoming_packets} packets received | packet loss: {packet_loss * 100}%",
+            end='\r')
 
     async def log_forever(self):
-        start_time = time.time()
         while True:
-            self.logger.log(self.entries)
-            self.entries = []
-            await asyncio.sleep(self.log_interval - (time.time() - start_time) % self.log_interval)
+            self.test_front_end_log()
+            await asyncio.sleep(self.log_interval)
 
     async def serve_forever(self, address):
         start_time = time.time()
         while True:
             self.send_packet(address)
 
-            await asyncio.sleep(self.interval - (time.time() - start_time) % self.interval)
+            await asyncio.sleep(self.__interval - (time.time() - start_time) % self.__interval)
 
     def shutdown(self):
         self.server_socket.close()
+        self.logger.log(self.outgoing_packets)
+        self.logger.log(self.incoming_packets)
         exit(1)
+
+    def calculate_packet_loss(self):
+        if not self.incoming_packets or not self.outgoing_packets:
+            return 1 - len(self.incoming_packets) / len(self.outgoing_packets)
+
+
+class EchoServerProtocol(asyncio.DatagramProtocol):
+    def __init__(self, server):
+        self.server = server
+        self.transport = None
+
+    def connection_made(self, transport):
+        self.server.server_socket = transport
+        self.transport = transport
+
+    def datagram_received(self, data, addr):
+        message = data.decode()
+        self.server.incoming_packets.append(Packet_entity(message, datetime.now()))
