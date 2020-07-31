@@ -6,21 +6,19 @@ from src.server import Server
 class TaskFactory:
     @staticmethod
     def create_task(first_arg):
-        options = {
-            's': Server,
-            'p': Probe,
-            'h': Help
-        }
-        if options[first_arg]() is None:
+        if first_arg == 's':
+            return Server()
+        elif first_arg == 'p':
+            return Probe(('192.168.0.107', 7070))
+        else:
             return Help()
-        return options[first_arg]()
 
 
 class Steinloss:
 
     @staticmethod
     def run():
-        task = TaskFactory.create_task(sys.argv[0])
+        task = TaskFactory.create_task(sys.argv[1])
         task.run()
 
 

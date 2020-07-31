@@ -1,63 +1,58 @@
-import asyncio
-import pickle
-from datetime import datetime
-from socket import socket, AF_INET, SOCK_DGRAM, SOCK_STREAM
-
-from src.util import repeat
+from socket import AF_INET, SOCK_DGRAM
+import socket
 
 
 class Probe:
     packet_size = 1024
 
-    def __init__(self):
-        self.log_port = 8888
-        self.log_socket = socket(AF_INET, SOCK_STREAM)
-        self.packets_received = []
-        self.socket = socket(AF_INET, SOCK_DGRAM)
+    def __init__(self, server_address, address=('', 7071)):
+        self.old_id = 0
+        self.server_to_client_loss = 0
+        self.server_address = server_address
+        self.address = address
+        self.id = 0
+        self.sock = socket.socket(SOCK_DGRAM, AF_INET)
+        self.sock.bind(self.address)
 
-    async def main(self):
-        logging_thread = asyncio.ensure_future(repeat(self.test_send_frontend, interval=1))
-        recv_thread = asyncio.ensure_future(repeat(self.receive_packet))
-
+    def main(self):
         self.ping_server()
-
-        await logging_thread
-        await recv_thread
+        self.run_loop()
 
     def run(self):
         try:
-            asyncio.run(self.main())
+            self.respond_to_server('go')
+            self.run_loop()
         except KeyboardInterrupt:
             pass
         finally:
-            self.socket.close()
-            self.log_socket.close()
-            exit(1)
+            self.shutdown()
 
-    async def receive_packet(self):
-        packet = self.socket.recv(self.packet_size)
-        self.packets_received.append((packet, datetime.now()))
+    def receive_packet(self):
+        packet = self.sock.recv(self.packet_size).decode()
+        if self.is_packet_loss(packet):
+            self.server_to_client_loss += 1
+        print(
+            f"\treceived message: {packet} | probe id: {self.id} |"
+            f" server->probe loss: {self.server_to_client_loss}",
+            end='\r')
+        self.old_id = int(packet)
+        self.respond_to_server(packet + f"_{self.id}")
+        self.id += 1
 
-    def encode_packets(self):
-        return pickle.dumps(self.packets_received)
-
-    def tcp_connect_to_server(self):
-        self.log_socket.connect(('localhost', self.log_port))
-
-    async def test_send_frontend(self):
-        print(datetime.now().strftime("%H:%M:%S"))
-        print(len(self.packets_received))
-        # self.packets_received = []
-
-    async def log_packets_to_server(self):
-        encoded_msg = self.encode_packets()
-        self.packets_received = []
-
-        if self.log_socket is None:
-            self.tcp_connect_to_server()
-
-        self.log_socket.send(encoded_msg)
+    def respond_to_server(self, packet: str):
+        self.sock.sendto(packet.encode(), self.server_address)
 
     def ping_server(self):
-        address = '127.0.0.1', 7070
-        self.socket.sendto('begin_test'.encode(), address)
+        self.respond_to_server('begin')
+
+    def shutdown(self):
+        pass
+
+    def run_loop(self):
+        while True:
+            self.receive_packet()
+
+    def is_packet_loss(self, packet):
+        new_id = int(packet)
+
+        return self.old_id + 1 == new_id

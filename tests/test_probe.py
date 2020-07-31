@@ -1,39 +1,35 @@
-import pickle
-from datetime import datetime
+import socket
 import pytest
+
 from src.probe import Probe
 
 
-def _receive_packet_should_save_all_received_packets(mocker, freezer):
-    mocker.patch('socket.socket.recv', return_value='fake_id')
-
-    probe = Probe()
-    probe.receive_packet()
-
-    assert len(probe.packets_received) == 1
-    expected = 'fake_id', datetime.now()
-    assert probe.packets_received.pop() == expected
+@pytest.fixture(autouse=True)
+def e(monkeypatch, mocker):
+    monkeypatch.setattr(socket, 'socket', mocker.patch('socket.socket'))
 
 
-def _encode_packets_should_return_binary_string():
-    probe = Probe()
-    test_packets = [('1', datetime.now()), ('2', datetime.now())]
-    probe.packets_received = test_packets
-    actual = pickle.dumps(test_packets)
+class Test_probe:
+    def setup_method(self):
+        self.probe = Probe(('fake_address', 1337))
 
-    assert len(probe.packets_received)
-    assert probe.encode_packets() == actual
+    def test_packet_received_should_increment_id(self):
+        assert self.probe.id == 0
+        self.probe.receive_packet()
+        assert self.probe.id == 1
 
+    def test_upon_receiving_packet_should_respond_to_server_with_concat_id(self):
+        self.probe.sock.recv.return_value = '1'.encode()
+        self.probe.receive_packet()
 
-@pytest.mark.asyncio
-async def test_log_should_send_packets_to_server_using_pickle(mocker, freezer):
-    freezer.move_to('2020-08-08')
-    test_packets = [('1', datetime.now()), ('2', datetime.now())]
-    mocked_tcp_send = mocker.patch('socket.socket.send')
+        self.probe.sock.sendto.assert_called_once_with('1_0'.encode(), self.probe.server_address)
 
-    probe = Probe()
-    probe.packets_received = test_packets
-    await probe.log_packets_to_server()
+    def test_is_packet_loss_should_return_true(self):
+        self.probe.old_id = 4
 
-    assert probe.packets_received == []
-    mocked_tcp_send.assert_called_with(pickle.dumps(test_packets))
+        assert self.probe.is_packet_loss('5')
+
+    def test_is_packet_loss_should_return_false(self):
+        self.probe.old_id = 7
+
+        assert not self.probe.is_packet_loss('7')
