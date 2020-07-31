@@ -3,9 +3,6 @@
 name: Lint and test
 
 on:
-  push:
-    branches:
-      - master
   pull_request:
     branches:
       - master
@@ -34,4 +31,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Test with pytest
         run: |
+          if [ -f tests/requirements.txt ]; then pip install -r tests/requirements.txt; fi
           pytest
