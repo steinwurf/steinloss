@@ -5,9 +5,10 @@ from src.server import Server
 
 class TaskFactory:
     @staticmethod
-    def create_task(first_arg):
+    def create_task():
+        first_arg = sys.argv[1] if len(sys.argv) > 1 else 'help'
         if first_arg == 's':
-            return Server()
+            return Server.gigabyte()
         elif first_arg == 'p':
             return Probe(('192.168.0.107', 7070))
         else:
@@ -18,7 +19,7 @@ class Steinloss:
 
     @staticmethod
     def run():
-        task = TaskFactory.create_task(sys.argv[1])
+        task = TaskFactory.create_task()
         task.run()
 
 

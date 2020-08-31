@@ -16,16 +16,22 @@ gigabyte = 1048576 * kilobyte
 class Server:
     packet_size = kilobyte
 
+    @classmethod
+    def gigabyte(cls):
+        return cls(speed=gigabyte)
+
     def __init__(self, speed=megabyte, listening_address=('0.0.0.0', 7070),
                  time_of_sample_size=ONE_SECOND * 60 * 4):
+        self.last_sent_packet = 0
+        self.last_received_packet = 0
         self.time_of_sample_size = time_of_sample_size
         self.socket_timeout = 10  # seconds
         self.log_interval = 1
         self.__logger = None
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.listening_address = listening_address
-        self.outgoing_packets = []
-        self.incoming_packets = []
+        self.outgoing_packets = [Packet_entity(-1, datetime.now())]
+        self.incoming_packets = [Packet_entity(-1, datetime.now())]
         self.id = 0
         self.__interval = 1
         self.speed = speed
@@ -62,9 +68,6 @@ class Server:
     def save_entry(self):
         self.outgoing_packets.append(Packet_entity(self.id, datetime.now()))
 
-    # while loop
-    # setup interval
-    # def logger
     def run(self):
         self.ready_socket()
         address = self.wait_for_probe()
@@ -119,12 +122,10 @@ class Server:
             exit("[ERROR] %s\n" % error)
 
     def test_front_end_log(self):
-        outgoing_packets = len(self.outgoing_packets)
-        incoming_packets = len(self.incoming_packets)
         packet_loss = self.calculate_packet_loss()
 
         print(
-            f"{outgoing_packets} packets send | {incoming_packets} packets received | packet loss: {packet_loss * 100}%",
+            f"{self.last_sent_packet} packets send | {self.last_received_packet} packets received | packet loss: {packet_loss * 100}%",
             end='\r')
 
     async def log_forever(self):
@@ -146,8 +147,10 @@ class Server:
         exit(1)
 
     def calculate_packet_loss(self):
-        if not self.incoming_packets or not self.outgoing_packets:
-            return 1 - len(self.incoming_packets) / len(self.outgoing_packets)
+        if self.last_sent_packet > 0 and self.last_received_packet > 0:
+            pct_of_successful_packets = self.last_received_packet / self.last_sent_packet
+            return 1 - pct_of_successful_packets
+        return 0
 
 
 class EchoServerProtocol(asyncio.DatagramProtocol):
@@ -161,4 +164,8 @@ class EchoServerProtocol(asyncio.DatagramProtocol):
 
     def datagram_received(self, data, addr):
         message = data.decode()
+        numbers = message.split('_')
+        self.server.last_sent_packet = int(numbers[0])
+        self.server.last_received_packet = int(numbers[1])
+
         self.server.incoming_packets.append(Packet_entity(message, datetime.now()))

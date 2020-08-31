@@ -6,7 +6,7 @@ class Probe:
     packet_size = 1024
 
     def __init__(self, server_address, address=('', 7071)):
-        self.old_id = 0
+        self.id_on_last_recived_packet = -1
         self.server_to_client_loss = 0
         self.server_address = server_address
         self.address = address
@@ -29,15 +29,19 @@ class Probe:
 
     def receive_packet(self):
         packet = self.sock.recv(self.packet_size).decode()
+
         if self.is_packet_loss(packet):
             self.server_to_client_loss += 1
-        print(
-            f"\treceived message: {packet} | probe id: {self.id} |"
-            f" server->probe loss: {self.server_to_client_loss}",
-            end='\r')
-        self.old_id = int(packet)
+
+        self.id_on_last_recived_packet = int(packet)
+
         self.respond_to_server(packet + f"_{self.id}")
         self.id += 1
+
+        print(
+            f"received message: {packet} | probe id: {self.id} |"
+            f" server->probe loss: {self.server_to_client_loss}",
+            end='\r')
 
     def respond_to_server(self, packet: str):
         self.sock.sendto(packet.encode(), self.server_address)
@@ -54,5 +58,5 @@ class Probe:
 
     def is_packet_loss(self, packet):
         new_id = int(packet)
-
-        return self.old_id + 1 == new_id
+        difference = new_id - self.id_on_last_recived_packet
+        return difference != 1

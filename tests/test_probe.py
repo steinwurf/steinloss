@@ -26,11 +26,11 @@ class Test_probe:
         self.probe.sock.sendto.assert_called_once_with('1_0'.encode(), self.probe.server_address)
 
     def test_is_packet_loss_should_return_true(self):
-        self.probe.old_id = 4
+        self.probe.id_on_last_recived_packet = 4
 
         assert self.probe.is_packet_loss('5')
 
     def test_is_packet_loss_should_return_false(self):
-        self.probe.old_id = 7
+        self.probe.id_on_last_recived_packet = 7
 
         assert not self.probe.is_packet_loss('7')
