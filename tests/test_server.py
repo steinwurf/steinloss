@@ -1,11 +1,12 @@
 import asyncio
 import socket
+import time
 from datetime import datetime
 from math import ceil
 
 import pytest
+
 from src.server import Server
-from src.packet_entity import Packet_entity
 
 kilobyte = 1024
 
@@ -28,24 +29,19 @@ class Test_server:
         assert server.interval == 0.2
 
     @pytest.mark.parametrize(
-        "index, packet_id", [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5)]
+        "packets", [1, 2, 3, 4]
     )
-    def test_send_packet_should_save_entry(self, mocker, index, packet_id, freezer):
-        mocker.patch('socket.socket.sendto')
-
+    def test_send_packet_should_save_entry(self, mocker, packets, freezer):
+        mocker.patch('socket.socket')
         server = Server()
-        for _ in range(index + 1):
+
+        for _ in range(packets):
             server.send_packet(None)
 
-        expected = Packet_entity(packet_id, datetime.now())
-        assert server.outgoing_packets[index].id == expected.id, "id"
-        assert server.outgoing_packets[index].time == expected.time, "timestamp"
+        assert len(server.outgoing_packets) == packets
 
-    # def test_send_packet_should_call_socket_sendto(self):
-    #     server = Server()
-    #     server.send_packet('address placeholder')
-    #
-    #     server.server_socket.sendto.assert_called_once()
+        id_string = server.outgoing_packets.pop().id
+        assert int(id_string) == packets
 
     def test_wait_for_probe_should_return_address_of_probe(self, mocker):
         server = Server()
@@ -72,17 +68,6 @@ class Test_server:
             mocked_sendto.assert_called_with(('%d' % i).encode(), probe_address)
 
     @pytest.mark.asyncio
-    async def test_log_forever_should_log_twice_after_two_second(self, mocker, event_loop):
-        server = Server()
-        server.log_interval = 0.01
-
-        mocked_log_method = mocker.patch.object(server.logger, 'log')
-        event_loop.create_task(server.log_forever())
-        await asyncio.sleep(0.1, loop=event_loop)
-
-        assert mocked_log_method.call_count == 10
-
-    @pytest.mark.asyncio
     @pytest.mark.parametrize(
         "speed, duration", [(4096, 0.2), (196608, 0.1)]
     )
@@ -99,10 +84,8 @@ class Test_server:
     # shutdown should log rest, and close socket
     def test_calculate_packet_loss_should_answer_in_pct_of_lost_packets(self, freezer):
         server = Server()
-        server.outgoing_packets = [('1', datetime.now()), ('2', datetime.now()), ('3', datetime.now()),
-                                   ('4', datetime.now())]
-        server.incoming_packets = [('1_1', datetime.now()), ('2_2', datetime.now()),
-                                   ('4_3', datetime.now())]
+        server.last_sent_packet = 4
+        server.last_received_packet = 3
 
         assert server.calculate_packet_loss() == 0.25
 

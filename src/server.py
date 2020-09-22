@@ -21,16 +21,16 @@ class Server:
         return cls(speed=gigabyte)
 
     def __init__(self, speed=megabyte, listening_address=('0.0.0.0', 7070),
-                 time_of_sample_size=ONE_SECOND * 60 * 2):
+                 runtime_of_test=ONE_SECOND * 60 * 2):
         self.last_sent_packet = 0
         self.last_received_packet = 0
-        self.time_of_sample_size = time_of_sample_size
+        self.time_of_sample_size = runtime_of_test
         self.socket_timeout = 10  # seconds
         self.log_interval = 1
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.listening_address = listening_address
-        self.outgoing_packets = [Packet_entity(-1, datetime.now())]
-        self.incoming_packets = [Packet_entity(-1, datetime.now())]
+        self.outgoing_packets = []
+        self.incoming_packets = []
         self.id = 0
         self.__interval = 1
         self.speed = speed
@@ -78,7 +78,7 @@ class Server:
 
         loop.create_task(self.serve_forever(address))
 
-        ## running part
+        # Running part
         print('loop is running')
         try:
             loop.run_until_complete(asyncio.sleep(self.time_of_sample_size))
@@ -110,7 +110,7 @@ class Server:
         except socket.error as error:
             exit("[ERROR] %s\n" % error)
 
-    def test_front_end_log(self):
+    def log(self):
         packet_loss = self.calculate_packet_loss()
 
         print(
@@ -120,7 +120,7 @@ class Server:
 
     async def log_forever(self):
         while True:
-            self.test_front_end_log()
+            self.log()
             await asyncio.sleep(self.log_interval)
 
     async def serve_forever(self, address):
