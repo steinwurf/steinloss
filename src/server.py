@@ -21,13 +21,12 @@ class Server:
         return cls(speed=gigabyte)
 
     def __init__(self, speed=megabyte, listening_address=('0.0.0.0', 7070),
-                 time_of_sample_size=ONE_SECOND * 60 * 4):
+                 time_of_sample_size=ONE_SECOND * 60 * 2):
         self.last_sent_packet = 0
         self.last_received_packet = 0
         self.time_of_sample_size = time_of_sample_size
         self.socket_timeout = 10  # seconds
         self.log_interval = 1
-        self.__logger = None
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.listening_address = listening_address
         self.outgoing_packets = [Packet_entity(-1, datetime.now())]
@@ -45,18 +44,8 @@ class Server:
         self.__interval = self.packet_size / value
 
     @property
-    def logger(self):
-        if self.__logger is None:
-            self.__logger = Entity_Logger('server_stats')
-        return self.__logger
-
-    @property
     def interval(self):
         return self.__interval
-
-    @logger.setter
-    def logger(self, value):
-        self.__logger = value
 
     def send_packet(self, address):
         packet = "%d" % self.id
@@ -125,7 +114,8 @@ class Server:
         packet_loss = self.calculate_packet_loss()
 
         print(
-            f"{self.last_sent_packet} packets send | {self.last_received_packet} packets received | packet loss: {packet_loss * 100}%",
+            f"{self.last_sent_packet} packets send | {self.last_received_packet} packets received |" +
+            f"packet loss: {packet_loss * 100}%",
             end='\r')
 
     async def log_forever(self):
@@ -142,8 +132,11 @@ class Server:
 
     def shutdown(self):
         self.server_socket.close()
-        self.logger.log(self.outgoing_packets)
-        self.logger.log(self.incoming_packets)
+        server_logger = Entity_Logger('server_send')
+        server_logger.log(self.outgoing_packets)
+
+        respond_logger = Entity_Logger('respond')
+        respond_logger.log(self.incoming_packets)
         exit(1)
 
     def calculate_packet_loss(self):
