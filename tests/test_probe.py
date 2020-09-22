@@ -1,39 +1,39 @@
-import pickle
-from datetime import datetime
-import pytest
 from src.probe import Probe
 
 
-def _receive_packet_should_save_all_received_packets(mocker, freezer):
-    mocker.patch('socket.socket.recv', return_value='fake_id')
+def test_packet_received_should_increment_id(mocker):
+    mocker.patch('socket.socket')
+    probe = Probe(('fake_address', 1337))
 
-    probe = Probe()
+    assert probe.id == 0
+    probe.receive_packet()
+    assert probe.id == 1
+
+
+def test_upon_receiving_packet_should_respond_to_server_with_concat_id(mocker):
+    mocker.patch('socket.socket')
+    probe = Probe(('fake_address', 1337))
+
+    probe.sock.recv.return_value = '1'.encode()
     probe.receive_packet()
 
-    assert len(probe.packets_received) == 1
-    expected = 'fake_id', datetime.now()
-    assert probe.packets_received.pop() == expected
+    probe.sock.sendto.assert_called_once_with('1_0'.encode(), probe.server_address)
 
 
-def _encode_packets_should_return_binary_string():
-    probe = Probe()
-    test_packets = [('1', datetime.now()), ('2', datetime.now())]
-    probe.packets_received = test_packets
-    actual = pickle.dumps(test_packets)
+def test_is_packet_loss_should_return_true(mocker):
+    mocker.patch('socket.socket')
+    probe = Probe(('fake_address', 1337))
 
-    assert len(probe.packets_received)
-    assert probe.encode_packets() == actual
+    probe.id_on_last_received_packet = 4
+
+    assert probe.is_packet_loss('5')
 
 
-@pytest.mark.asyncio
-async def test_log_should_send_packets_to_server_using_pickle(mocker, freezer):
-    freezer.move_to('2020-08-08')
-    test_packets = [('1', datetime.now()), ('2', datetime.now())]
-    mocked_tcp_send = mocker.patch('socket.socket.send')
+def test_is_packet_loss_should_return_false(mocker):
+    mocker.patch('socket.socket')
+    probe = Probe(('fake_address', 1337))
 
-    probe = Probe()
-    probe.packets_received = test_packets
-    await probe.log_packets_to_server()
+    probe.id_on_last_received_packet = 7
 
-    assert probe.packets_received == []
-    mocked_tcp_send.assert_called_with(pickle.dumps(test_packets))
+    # skipped packet 8
+    assert not probe.is_packet_loss('9')

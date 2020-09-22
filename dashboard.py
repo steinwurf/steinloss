@@ -8,6 +8,8 @@ import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output
 
+from dashboard_util import format_to_graph_data
+
 ONE_SECOND = 1000
 
 app = dash.Dash(
@@ -20,8 +22,8 @@ server = app.server
 
 APP_PATH = str(pathlib.Path(__file__).parent.resolve())
 
-probe_stats_full_path = os.path.join(APP_PATH, os.path.join("data", "client_stats.csv"))
-server_stats_full_path = os.path.join(APP_PATH, os.path.join("data", "server_stats.csv"))
+probe_stats_full_path = os.path.join(APP_PATH, os.path.join("data", "client_stats_(1).csv"))
+server_stats_full_path = os.path.join(APP_PATH, os.path.join("data", "server_stats_(8).csv"))
 client_packets = pd.read_csv(probe_stats_full_path)
 server_packets = pd.read_csv(server_stats_full_path)
 result = client_packets.combine_first(server_packets)
@@ -30,9 +32,23 @@ result = client_packets.combine_first(server_packets)
 @app.callback(Output('packet-loss', 'figure'),
               [Input('interval_component', 'n_intervals')])
 def update_metrics(n):
-    new_values = pd.read_csv(server_stats_full_path)
-    data = go.Scatter(y=new_values.get('packets'), x=new_values.get('timestamp'))
-    fig = generate_std_fig(data)
+    fig = generate_std_fig()
+    server_values = pd.read_csv(server_stats_full_path)
+    probe_values = pd.read_csv(probe_stats_full_path)
+
+    loss_dataframe = format_to_graph_data(server_values, probe_values)
+
+    fig.add_trace(go.Scatter(x=loss_dataframe.get('timestamp'), y=loss_dataframe.get('acc_loss'), name='packet loss'))
+
+    return fig
+
+
+@app.callback(Output('probe-received', 'figure'),
+              [Input('interval_component', 'n_intervals')])
+def update_metrics(n):  # noqa
+    fig = generate_std_fig()
+    fig.add_trace(go.Scatter(x=[0, 1, 2, 3], y=[4, 5, 6, 5], name='ping'))
+
     return fig
 
 
@@ -200,7 +216,7 @@ def build_status_container():
 def build_interval():
     return dcc.Interval(
         id='interval_component',
-        interval=ONE_SECOND,
+        interval=30 * ONE_SECOND,
         n_intervals=0
     )
 
