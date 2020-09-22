@@ -6,7 +6,7 @@ class Probe:
     packet_size = 1024
 
     def __init__(self, server_address, address=('', 7071)):
-        self.id_on_last_recived_packet = -1
+        self.id_on_last_received_packet = -1
         self.server_to_client_loss = 0
         self.server_address = server_address
         self.address = address
@@ -33,7 +33,7 @@ class Probe:
         if self.is_packet_loss(packet):
             self.server_to_client_loss += 1
 
-        self.id_on_last_recived_packet = int(packet)
+        self.id_on_last_received_packet = int(packet)
 
         self.respond_to_server(packet + f"_{self.id}")
         self.id += 1
@@ -58,5 +58,5 @@ class Probe:
 
     def is_packet_loss(self, packet):
         new_id = int(packet)
-        difference = new_id - self.id_on_last_recived_packet
+        difference = new_id - self.id_on_last_received_packet
         return difference != 1
