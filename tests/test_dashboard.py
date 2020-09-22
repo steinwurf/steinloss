@@ -1,6 +1,4 @@
-from dashboard_util import format_to_graph_data
 import pandas as pd
-import numpy as np
 
 
 class Test_Dashboard:

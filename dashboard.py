@@ -5,12 +5,8 @@ import dash
 import pandas as pd
 from plotly import graph_objs as go
 import dash_core_components as dcc
-import plotly.express as px
 import dash_html_components as html
 from dash.dependencies import Input, Output
-import matplotlib.pyplot as plt
-
-from plotly.subplots import make_subplots
 
 from dashboard_util import format_to_graph_data
 
@@ -49,7 +45,7 @@ def update_metrics(n):
 
 @app.callback(Output('probe-received', 'figure'),
               [Input('interval_component', 'n_intervals')])
-def update_metrics(n):
+def update_metrics(n):  # noqa
     fig = generate_std_fig()
     fig.add_trace(go.Scatter(x=[0, 1, 2, 3], y=[4, 5, 6, 5], name='ping'))
 
