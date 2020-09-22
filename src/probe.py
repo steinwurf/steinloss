@@ -59,4 +59,4 @@ class Probe:
     def is_packet_loss(self, packet):
         new_id = int(packet)
         difference = new_id - self.id_on_last_received_packet
-        return difference != 1
+        return difference == 1

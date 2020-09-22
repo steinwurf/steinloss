@@ -4,33 +4,39 @@ import pytest
 from src.probe import Probe
 
 
-@pytest.mark.usefixtures('socket')
-class Test_probe:
+def test_packet_received_should_increment_id(mocker):
+    mocker.patch('socket.socket')
+    probe = Probe(('fake_address', 1337))
 
-    @pytest.fixture(autouse=True)
-    def mock_env_socket(mocker, monkeypatch):
-        monkeypatch.setattr(socket, 'socket', return_value=mocker.patch('socket.socket'))
+    assert probe.id == 0
+    probe.receive_packet()
+    assert probe.id == 1
 
-    def setup_method(self):
-        self.probe = Probe(('fake_address', 1337))
 
-    def test_packet_received_should_increment_id(self):
-        assert self.probe.id == 0
-        self.probe.receive_packet()
-        assert self.probe.id == 1
+def test_upon_receiving_packet_should_respond_to_server_with_concat_id(mocker):
+    mocker.patch('socket.socket')
+    probe = Probe(('fake_address', 1337))
 
-    def test_upon_receiving_packet_should_respond_to_server_with_concat_id(self):
-        self.probe.sock.recv.return_value = '1'.encode()
-        self.probe.receive_packet()
+    probe.sock.recv.return_value = '1'.encode()
+    probe.receive_packet()
 
-        self.probe.sock.sendto.assert_called_once_with('1_0'.encode(), self.probe.server_address)
+    probe.sock.sendto.assert_called_once_with('1_0'.encode(), probe.server_address)
 
-    def test_is_packet_loss_should_return_true(self):
-        self.probe.id_on_last_recived_packet = 4
 
-        assert self.probe.is_packet_loss('5')
+def test_is_packet_loss_should_return_true(mocker):
+    mocker.patch('socket.socket')
+    probe = Probe(('fake_address', 1337))
 
-    def test_is_packet_loss_should_return_false(self):
-        self.probe.id_on_last_recived_packet = 7
+    probe.id_on_last_received_packet = 4
 
-        assert not self.probe.is_packet_loss('7')
+    assert probe.is_packet_loss('5')
+
+
+def test_is_packet_loss_should_return_false(mocker):
+    mocker.patch('socket.socket')
+    probe = Probe(('fake_address', 1337))
+
+    probe.id_on_last_received_packet = 7
+
+    # skipped packet 8
+    assert not probe.is_packet_loss('9')
