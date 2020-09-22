@@ -114,8 +114,8 @@ class Server:
         packet_loss = self.calculate_packet_loss()
 
         print(
-            f"{self.last_sent_packet} packets send | {self.last_received_packet} packets received |" +
-            f"packet loss: {packet_loss * 100}%",
+            f"{self.last_sent_packet} packets send | {self.last_received_packet} packets received"
+            f" | packet loss: {packet_loss * 100}%",
             end='\r')
 
     async def log_forever(self):

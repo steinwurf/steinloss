@@ -1,6 +1,3 @@
-import socket
-import pytest
-
 from src.probe import Probe
 
 
