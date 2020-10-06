@@ -1,20 +1,35 @@
-from datetime import datetime
+class Data_Presenter(object):
+    __instance = None
 
-import pandas as pd
-
-
-def format_to_graph_data(server_values: pd.DataFrame, probe_values: pd.DataFrame):
-    x = server_values.set_index('packet').join(probe_values.set_index('packet'), lsuffix='_server', rsuffix='_probe')
-
-    graph_data = []
-    loss = 0
-    fmt = '%Y-%m-%d %H:%M:%S.%f'
-    for row in x.itertuples():
-        if isinstance(row.timestamp_probe, str):
-            ping = datetime.strptime(row.timestamp_probe, fmt) - datetime.strptime(row.timestamp_server, fmt)
+    def __init__(self):
+        if Data_Presenter.__instance is not None:
+            raise RuntimeError("Cannot init class twice, as it is as singelton")
         else:
-            loss += 1
-            ping = 0
-        graph_data.append((row.timestamp_server, loss / row.Index, ping))
-    graph_dataframe = pd.DataFrame(graph_data, columns=['timestamp', 'acc_loss', 'ping'])
-    return graph_dataframe
+            self.data = []
+            Data_Presenter.__instance = self
+
+    @classmethod
+    def get_instance(cls):
+        if cls.__instance is None:
+            Data_Presenter()
+        return cls.__instance
+
+    @classmethod
+    def clear_instance(cls):
+        cls.__instance = None
+
+    def append(self, test_data):
+        self.data = self.data + test_data
+
+    pointer = 0
+
+    def read(self):
+        data = []
+
+        data_len = len(self.data)
+        for i in range(self.pointer, data_len):
+            data.append(self.data[i])
+
+        self.pointer = data_len
+
+        return data
