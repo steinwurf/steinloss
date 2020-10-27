@@ -20,20 +20,38 @@ def test_upon_receiving_packet_should_respond_to_server_with_concat_id(mocker):
     probe.sock.sendto.assert_called_once_with('1_0'.encode(), probe.server_address)
 
 
-def test_is_packet_loss_should_return_true(mocker):
+def test_is_packet_loss_should_detect_loss_when_the_next_id_is_more_than_three_numbers_higere(mocker):
     mocker.patch('socket.socket')
     probe = Probe(('fake_address', 1337))
 
-    probe.id_on_last_received_packet = 4
+    probe.consume_packet('1')
+    # lost package 2, 3, 4
+    probe.consume_packet('5')
 
-    assert probe.is_packet_loss('5')
+    assert probe.lost == 3
 
 
-def test_is_packet_loss_should_return_false(mocker):
+def test_is_packet_loss_should_handle_reordering(mocker):
     mocker.patch('socket.socket')
     probe = Probe(('fake_address', 1337))
 
-    probe.id_on_last_received_packet = 7
+    probe.consume_packet('1')
+    probe.consume_packet('3')
+    probe.consume_packet('2')
 
-    # skipped packet 8
-    assert not probe.is_packet_loss('9')
+    assert probe.lost == 0
+
+
+def test_is_packet_loss_should_handle_reordering_down_to_three(mocker):
+    mocker.patch('socket.socket')
+    probe = Probe(('fake_address', 1337))
+
+    probe.consume_packet('1')
+    probe.consume_packet('3')
+    probe.consume_packet('4')
+    probe.consume_packet('5')
+
+    # not in reorder window
+    probe.consume_packet('2')
+
+    assert probe.lost == 1

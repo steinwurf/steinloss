@@ -6,6 +6,7 @@ class Probe:
     packet_size = 1024
 
     def __init__(self, server_address, address=('', 7071)):
+        self.reordering_window = 3
         self.lost = 0
         self.duplicate = 0
         self.reorder = 0
@@ -33,7 +34,7 @@ class Probe:
     def receive_packet(self):
         packet = self.sock.recv(self.packet_size).decode()
 
-        self.is_packet_loss(packet)
+        self.consume_packet(packet)
 
         self.id_on_last_received_packet = int(packet)
 
@@ -62,16 +63,15 @@ class Probe:
         while True:
             self.receive_packet()
 
-    def is_packet_loss(self, packet):
+    def consume_packet(self, packet):
         sequence_number = int(packet)
         if self.id_on_last_received_packet:
             if sequence_number > self.id_on_last_received_packet:
                 lost = sequence_number - self.id_on_last_received_packet - 1
                 self.lost += lost
             elif sequence_number < self.id_on_last_received_packet:
-                self.reorder += 1
-            else:
-                self.duplicate += 1
+                if sequence_number > self.id_on_last_received_packet - self.reordering_window:
+                    self.lost -= 1
         else:
             self.id_on_last_received_packet = sequence_number
 
