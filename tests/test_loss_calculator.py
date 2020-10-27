@@ -1,7 +1,7 @@
 from freezegun import freeze_time
 from datetime import datetime, timedelta, time
 
-from src.loss_calculator import Loss_Calculator, Time_table
+from src.loss_calculator import Loss_Calculator, TimeTable
 from src.packet_entity import Packet_entity, sent_package, receive_package
 
 
@@ -95,7 +95,7 @@ class Test_Loss_Calculator:
 
     @freeze_time("00:00:00")
     def test_convert_datetime_max_value_for_rounding_down(self):
-        time_table = Time_table()
+        time_table = TimeTable()
 
         # 1000 milliseconds = 1 second
         at_999_milliseconds = datetime.now() + timedelta(milliseconds=999)
@@ -105,7 +105,7 @@ class Test_Loss_Calculator:
 
     @freeze_time("00:00:00")
     def test_convert_datetime_returns_seconds_in_string(self):
-        time_table = Time_table()
+        time_table = TimeTable()
 
         # 1000 milliseconds = 1 second
         at_1_milliseconds = datetime.now() + timedelta(seconds=1)

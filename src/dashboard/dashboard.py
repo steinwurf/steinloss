@@ -1,16 +1,18 @@
-import datetime
+import random
+from datetime import datetime, timedelta
+from hurry.filesize import size, verbose
 
-import requests
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
+import numpy
 import plotly
 from dash.dependencies import Input, Output
 
-# pip install pyorbital
-from pyorbital.orbital import Orbital
+from src.Data_Presenter import Data_Presenter
+from src.loss_calculator import TimeTable
 
-satellite = Orbital('TERRA')
+loss = 'loss'
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -22,22 +24,29 @@ app.layout = html.Div(
         dcc.Graph(id='live-update-graph'),
         dcc.Interval(
             id='interval-component',
-            interval=1 * 1000,  # in milliseconds
+            interval=5 * 1000,  # in milliseconds
             n_intervals=0
         )
     ])
 )
 
+start = datetime.now()
+
 
 @app.callback(Output('live-update-text', 'children'),
               [Input('interval-component', 'n_intervals')])
 def update_metrics(n):
-    lon, lat, alt = satellite.get_lonlatalt(datetime.datetime.now())
     style = {'padding': '5px', 'fontSize': '16px'}
+    data_presenter = Data_Presenter.get_instance()
+    time_table = data_presenter.get_time_table()
+
+    timestamp = datetime.now() - timedelta(seconds=1)
+    time_entry = time_table[timestamp]
+
+    speed = size(time_entry.sent * 1024, system=verbose)
+
     return [
-        html.Span('Longitude: {0:.2f}'.format(lon), style=style),
-        html.Span('Latitude: {0:.2f}'.format(lat), style=style),
-        html.Span('Altitude: {0:0.2f}'.format(alt), style=style)
+        html.Span(f"Package speed: {speed}/s", style=style),
     ]
 
 
@@ -45,24 +54,36 @@ def update_metrics(n):
 @app.callback(Output('live-update-graph', 'figure'),
               [Input('interval-component', 'n_intervals')])
 def update_graph_live(n):
-    satellite = Orbital('TERRA')
     data = {
         'time': [],
-        'Latitude': [],
-        'Longitude': [],
-        'Altitude': []
+        loss: [],
     }
 
     # Collect some data
-    for i in range(180):
-        time = datetime.datetime.now() - datetime.timedelta(seconds=i * 20)
-        lon, lat, alt = satellite.get_lonlatalt(
-            time
-        )
-        data['Longitude'].append(lon)
-        data['Latitude'].append(lat)
-        data['Altitude'].append(alt)
-        data['time'].append(time)
+    data_from_presenter = TimeTable()
+    time = datetime.now()
+    for x in range(0, 180):
+        delta = timedelta(seconds=x)
+        timestamp = time - delta
+
+        data_from_presenter[timestamp].sent = random.randint(90, 180)
+        data_from_presenter[timestamp].received = random.randint(1, 90)
+        data_from_presenter[timestamp].loss = data_from_presenter[timestamp].received / data_from_presenter[
+            timestamp].sent
+
+    data_presenter = Data_Presenter.get_instance()
+    time_table = data_presenter.get_time_table()
+    base = datetime.now()
+
+    timestamp_array = numpy.array([base - timedelta(seconds=i) for i in range(1, 180)])
+    for d in timestamp_array:
+        data['time'].append(d)
+
+        loss_pct = 0
+        entry = time_table[d]
+        if entry.sent != 0:
+            loss_pct = entry.loss / time_table[d].sent
+        data[loss].append(loss_pct)
 
     # Create the graph with subplots
     fig = plotly.tools.make_subplots(rows=2, cols=1, vertical_spacing=0.2)
@@ -73,22 +94,17 @@ def update_graph_live(n):
 
     fig.append_trace({
         'x': data['time'],
-        'y': data['Altitude'],
-        'name': 'Altitude',
+        'y': data[loss],
+        'name': loss,
         'mode': 'lines+markers',
         'type': 'scatter'
     }, 1, 1)
-    fig.append_trace({
-        'x': data['Longitude'],
-        'y': data['Latitude'],
-        'text': data['time'],
-        'name': 'Longitude vs Latitude',
-        'mode': 'lines+markers',
-        'type': 'scatter'
-    }, 2, 1)
-
     return fig
 
 
+def run():
+    app.run_server(host='127.0.0.1', port=8050)
+
+
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    run()
