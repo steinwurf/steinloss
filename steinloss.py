@@ -15,7 +15,7 @@ class TaskFactory:
         if first_arg == 's':
             return FrontEndAndBackEnd()
         elif first_arg == 'p':
-            return Probe(('10.0.0.1', 9220))
+            return Probe(('10.0.0.1', 7070))
         else:
             return Help()
 
