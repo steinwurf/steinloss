@@ -6,7 +6,10 @@ class Probe:
     packet_size = 1024
 
     def __init__(self, server_address, address=('', 7071)):
-        self.id_on_last_received_packet = -1
+        self.lost = 0
+        self.duplicate = 0
+        self.reorder = 0
+        self.id_on_last_received_packet = None
         self.server_to_client_loss = 0
         self.server_address = server_address
         self.address = address
@@ -30,17 +33,20 @@ class Probe:
     def receive_packet(self):
         packet = self.sock.recv(self.packet_size).decode()
 
-        if self.is_packet_loss(packet):
-            self.server_to_client_loss += 1
+        self.is_packet_loss(packet)
 
         self.id_on_last_received_packet = int(packet)
 
         self.respond_to_server(packet + f"_{self.id}")
         self.id += 1
 
+        if self.lost == 0 or self.id_on_last_received_packet == 0:
+            lost_pct = 0
+        else:
+            lost_pct = self.lost / self.id_on_last_received_packet
         print(
-            f"received message: {packet} | probe id: {self.id} |"
-            f" server->probe loss: {self.server_to_client_loss}",
+            f"received message: {self.id_on_last_received_packet} | probe id: {self.id} |" +
+            " server->probe loss: {:.2f}%".format(lost_pct * 100),
             end='\r')
 
     def respond_to_server(self, packet: str):
@@ -57,6 +63,16 @@ class Probe:
             self.receive_packet()
 
     def is_packet_loss(self, packet):
-        new_id = int(packet)
-        difference = new_id - self.id_on_last_received_packet
-        return difference == 1
+        sequence_number = int(packet)
+        if self.id_on_last_received_packet:
+            if sequence_number > self.id_on_last_received_packet:
+                lost = sequence_number - self.id_on_last_received_packet - 1
+                self.lost += lost
+            elif sequence_number < self.id_on_last_received_packet:
+                self.reorder += 1
+            else:
+                self.duplicate += 1
+        else:
+            self.id_on_last_received_packet = sequence_number
+
+        self.id_on_last_received_packet = max(sequence_number, self.id_on_last_received_packet)
