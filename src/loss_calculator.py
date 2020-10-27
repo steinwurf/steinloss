@@ -22,7 +22,7 @@ class TimeEntry:
         return f"{type(self).__name__}: loss:{self.loss} - sent_package:{self.sent} received:{self.received}"
 
 
-class Time_table:
+class TimeTable:
     def __init__(self):
         self.dict = dict()
 
@@ -46,7 +46,7 @@ class Time_table:
         return iter(self.dict)
 
 
-class packet_entry:
+class PacketEntry:
     sent_at: datetime
     received_at: datetime
 
@@ -65,9 +65,9 @@ class packet_entry:
 
 
 class packet_table(dict):
-    def __getitem__(self, key) -> packet_entry:
+    def __getitem__(self, key) -> PacketEntry:
         if key not in self.keys():
-            self.__setitem__(key, packet_entry())
+            self.__setitem__(key, PacketEntry())
         return super().__getitem__(key)
 
     def __repr__(self):
@@ -79,7 +79,7 @@ class packet_table(dict):
 
 class Loss_Calculator:
     def __init__(self):
-        self.time_table = Time_table()
+        self.time_table = TimeTable()
         self.packet_table = packet_table()
 
     def add(self, packet: Packet_entity):
@@ -108,7 +108,7 @@ class Loss_Calculator:
     def __repr__(self):
         return f"{str(self.time_table)}\n{str(self.packet_table)}"
 
-    def get_last_packages(self, number_of_packages: int) -> [packet_entry]:
+    def get_last_packages(self, number_of_packages: int) -> [PacketEntry]:
         arr = []
         counter = number_of_packages
         i = iter(reversed(self.packet_table))
