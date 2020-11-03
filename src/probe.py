@@ -1,17 +1,20 @@
+from queue import Queue
 from socket import AF_INET, SOCK_DGRAM
 import socket
+import numpy as np
 
 
 class Probe:
     packet_size = 1024
 
     def __init__(self, server_address, address=('', 7071)):
-        self.reordering_window = 3
+        self.window_size = 3
         self.lost = 0
         self.duplicate = 0
         self.reorder = 0
-        self.id_on_last_received_packet = None
+        self.sequence_number = None
         self.server_to_client_loss = 0
+        self.suspect = np.zeros(5)
         self.server_address = server_address
         self.address = address
         self.id = 0
@@ -36,17 +39,17 @@ class Probe:
 
         self.consume_packet(packet)
 
-        self.id_on_last_received_packet = int(packet)
+        self.sequence_number = int(packet)
 
         self.respond_to_server(packet + f"_{self.id}")
         self.id += 1
 
-        if self.lost == 0 or self.id_on_last_received_packet == 0:
+        if self.lost == 0 or self.sequence_number == 0:
             lost_pct = 0
         else:
-            lost_pct = self.lost / self.id_on_last_received_packet
+            lost_pct = self.lost / self.sequence_number
         print(
-            f"received message: {self.id_on_last_received_packet} | probe id: {self.id} |" +
+            f"received message: {self.sequence_number} | probe id: {self.id} |" +
             " server->probe loss: {:.2f}%".format(lost_pct * 100),
             end='\r')
 
@@ -64,15 +67,51 @@ class Probe:
             self.receive_packet()
 
     def consume_packet(self, packet):
-        sequence_number = int(packet)
-        if self.id_on_last_received_packet:
-            if sequence_number > self.id_on_last_received_packet:
-                lost = sequence_number - self.id_on_last_received_packet - 1
-                self.lost += lost
-            elif sequence_number < self.id_on_last_received_packet:
-                if sequence_number > self.id_on_last_received_packet - self.reordering_window:
-                    self.lost -= 1
-        else:
-            self.id_on_last_received_packet = sequence_number
+        full_window = self.window_size + 2
+        packet = int(packet)
+        pos = packet % full_window
 
-        self.id_on_last_received_packet = max(sequence_number, self.id_on_last_received_packet)
+        if self.sequence_number is None:
+            self.sequence_number = packet - 1
+
+        if packet > self.sequence_number:  # det er en ny pakke
+            # Move window forward from 2 being middle, to 3 being middle
+            # [0,1,2,3,4]
+            # [0,0,0,1,1]
+
+            # [5,1,2,3,4]
+            # [1,0,0,0,1]
+
+            # kun kig på det her, hvis vi er hoppet two tal
+            two_up = (pos - 2) % 5
+            if self.suspect[two_up] == 1:
+                self.lost += 1
+            self.suspect[two_up] = 1
+
+            if packet > (self.sequence_number + 1):
+                one_up = (pos - 1) % 5
+                if self.suspect[one_up] == 1:
+                    self.lost += 1
+                self.suspect[one_up] = 1
+
+            # set my pos to found
+            self.suspect[pos] = 0  # no loss
+            pass
+
+        if packet == self.sequence_number:
+            # duplication
+            pass
+        if packet < self.sequence_number:
+            # is it in reordering window?
+            if packet < self.sequence_number - self.window_size:
+                # it is an old package.
+                # The loss of this package is already counted
+                pass
+            else:
+                # in reordering window
+                # Tell that one of the packages in the reordering window is found
+                self.suspect[pos] = 0
+                # update my pos to found
+                pass
+
+        self.sequence_number = max(packet, self.sequence_number)
