@@ -1,15 +1,18 @@
 import asyncio
-import socket
-from math import ceil
-
 import pytest
 
+from datetime import datetime
+from src.Data_Presenter import Data_Presenter
+from src.packet_entity import sent_package, receive_package
 from src.server import Server
 
 kilobyte = 1024
 
 
-class Test_server:
+class TestServer:
+
+    def teardown_method(self):
+        Data_Presenter.clear_instance()
 
     @pytest.mark.parametrize(
         "speed, interval", [(kilobyte, 1), (2 * kilobyte, 0.5), (4 * kilobyte, 0.25)]
@@ -26,20 +29,17 @@ class Test_server:
 
         assert server.interval == 0.2
 
-    @pytest.mark.parametrize(
-        "packets", [1, 2, 3, 4]
-    )
-    def test_send_packet_should_save_entry(self, mocker, packets, freezer):
+    @pytest.mark.parametrize("packets", [1, 2, 3, 4])
+    def test_send_packet_should_save_entry(self, mocker, packets):
         mocker.patch('socket.socket')
+        time = datetime.now()
+        mocker.patch('src.server.Server.timestamp', return_value=time)
         server = Server()
 
-        for _ in range(packets):
-            server.send_packet(None)
+        for i in range(packets):
+            server.send_packet('ip_address')
 
-        assert len(server.outgoing_packets) == packets
-
-        id_string = server.outgoing_packets.pop().id
-        assert int(id_string) == packets
+        assert server.data_presenter.get_time_table()[time].sent == packets
 
     def test_wait_for_probe_should_return_address_of_probe(self, mocker):
         server = Server()
@@ -47,12 +47,6 @@ class Test_server:
         mocker.patch('socket.socket.recvfrom', return_value=[b"packet", fake_address])
 
         assert server.wait_for_probe() == fake_address
-
-    def test_socket_bind_throws_exception_should__exit(self, mocker):
-        server = Server()
-        mocker.patch('socket.socket.bind', side_effect=socket.error())
-        with pytest.raises(SystemExit, match=r"ERROR"):
-            server.ready_socket()
 
     @pytest.mark.parametrize(
         "iterations", [1, 2, 3]
@@ -67,9 +61,10 @@ class Test_server:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
-        "speed, duration", [(4096, 0.2), (196608, 0.1)]
+        "speed, duration, packages", [(4096, 0.24, 1), (8192, 0.24, 2)]
     )
-    async def test_serve_forever_should_send_packets_according_to_speed(self, mocker, event_loop, speed, duration):
+    async def test_serve_forever_should_send_packets_according_to_speed(
+            self, mocker, event_loop, speed, duration, packages):
         mocked_sendto = mocker.patch('src.server.Server.send_packet')
 
         server = Server(speed=speed)
@@ -77,15 +72,21 @@ class Test_server:
         event_loop.create_task(server.serve_forever('fake_adresse'))
         await asyncio.sleep(duration, loop=event_loop)
 
-        assert mocked_sendto.call_count == ceil(speed * duration / kilobyte)
+        assert mocked_sendto.call_count == packages
 
     # shutdown should log rest, and close socket
-    def test_calculate_packet_loss_should_answer_in_pct_of_lost_packets(self, freezer):
+    def test_calculate_packet_loss_should_answer_in_pct_of_lost_packets(self):
         server = Server()
-        server.last_sent_packet = 4
-        server.last_received_packet = 3
+        time = datetime.now()
 
-        assert server.calculate_packet_loss() == 0.25
+        server.save_entry(sent_package("1", time))
+        server.save_entry(sent_package("2", time))
+        server.save_entry(receive_package("1", "1", time))
+
+        assert server.calculate_packet_loss_in_pct(time) == 0.5
+
+
+# divide by zero in calculate loss
 
 
 class FakeTime:
