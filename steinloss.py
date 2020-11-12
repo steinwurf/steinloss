@@ -1,6 +1,4 @@
-import socket
 import sys
-import threading
 from threading import Thread
 
 from src.dashboard import dashboard

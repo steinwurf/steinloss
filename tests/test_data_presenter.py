@@ -1,18 +1,13 @@
 from datetime import datetime
 
 import pytest
-import pandas as pd
 from freezegun import freeze_time
 
 from src.Data_Presenter import Data_Presenter
 from src.packet_entity import sent_package, receive_package
 
 
-class Test_Data_Presenter:
-    def setup_method(self):
-        self.server_values = pd.read_csv('test_server.csv')
-        self.client_values = pd.read_csv('test_client.csv')
-
+class TestDataPresenter:
     def teardown_method(self):
         Data_Presenter.clear_instance()
 

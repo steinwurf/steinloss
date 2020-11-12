@@ -1,11 +1,11 @@
 from freezegun import freeze_time
-from datetime import datetime, timedelta, time
+from datetime import datetime, timedelta
 
 from src.loss_calculator import Loss_Calculator, TimeTable
-from src.packet_entity import Packet_entity, sent_package, receive_package
+from src.packet_entity import sent_package, receive_package
 
 
-class Test_Loss_Calculator:
+class TestLossCalculator:
     def test_initiate_loss_calculator(self):
         Loss_Calculator()
 
