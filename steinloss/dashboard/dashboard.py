@@ -9,8 +9,8 @@ import numpy
 import plotly
 from dash.dependencies import Input, Output
 
-from src.Data_Presenter import Data_Presenter
-from src.loss_calculator import TimeTable
+from steinloss.Data_Presenter import Data_Presenter
+from steinloss.loss_calculator import TimeTable
 
 loss = 'loss'
 

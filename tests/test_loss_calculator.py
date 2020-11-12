@@ -1,8 +1,8 @@
 from freezegun import freeze_time
 from datetime import datetime, timedelta
 
-from src.loss_calculator import Loss_Calculator, TimeTable
-from src.packet_entity import sent_package, receive_package
+from steinloss.loss_calculator import Loss_Calculator, TimeTable
+from steinloss.packet_entity import sent_package, receive_package
 
 
 class TestLossCalculator:

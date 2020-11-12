@@ -1,9 +1,9 @@
 import sys
 from threading import Thread
 
-from src.dashboard import dashboard
-from src.probe import Probe
-from src.server import Server
+from steinloss.dashboard import dashboard
+from steinloss.probe import Probe
+from steinloss.server import Server
 
 
 class TaskFactory:

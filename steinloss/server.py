@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 from typing import Tuple
 import time
 
-from src.Data_Presenter import Data_Presenter
-from src.packet_entity import sent_package, receive_package, Packet_entity
+from steinloss.Data_Presenter import Data_Presenter
+from steinloss.packet_entity import sent_package, receive_package, Packet_entity
 
 ONE_SECOND = 1
 

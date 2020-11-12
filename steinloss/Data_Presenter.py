@@ -1,4 +1,4 @@
-from src.loss_calculator import Loss_Calculator, PacketEntry, TimeTable
+from steinloss.loss_calculator import Loss_Calculator, PacketEntry, TimeTable
 
 
 class Data_Presenter(object):

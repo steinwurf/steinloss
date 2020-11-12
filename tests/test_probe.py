@@ -1,4 +1,4 @@
-from src.probe import Probe
+from steinloss.probe import Probe
 
 
 class TestProbe:

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from src.packet_entity import Packet_entity, receive_package, sent_package
+from steinloss.packet_entity import Packet_entity, receive_package, sent_package
 
 
 class TimeEntry:

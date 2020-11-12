@@ -3,8 +3,8 @@ from datetime import datetime
 import pytest
 from freezegun import freeze_time
 
-from src.Data_Presenter import Data_Presenter
-from src.packet_entity import sent_package, receive_package
+from steinloss.Data_Presenter import Data_Presenter
+from steinloss.packet_entity import sent_package, receive_package
 
 
 class TestDataPresenter:
