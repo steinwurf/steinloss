@@ -1,10 +1,7 @@
 import asyncio
-import socket
-from datetime import datetime
-from math import ceil
-
 import pytest
 
+from datetime import datetime
 from src.Data_Presenter import Data_Presenter
 from src.packet_entity import sent_package, receive_package
 from src.server import Server
@@ -12,7 +9,7 @@ from src.server import Server
 kilobyte = 1024
 
 
-class Test_server:
+class TestServer:
 
     def teardown_method(self):
         Data_Presenter.clear_instance()
@@ -64,9 +61,10 @@ class Test_server:
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
-        "speed, duration", [(4096, 0.2), (196608, 0.1)]
+        "speed, duration, packages", [(4096, 0.24, 1), (8192, 0.24, 2)]
     )
-    async def test_serve_forever_should_send_packets_according_to_speed(self, mocker, event_loop, speed, duration):
+    async def test_serve_forever_should_send_packets_according_to_speed(
+            self, mocker, event_loop, speed, duration, packages):
         mocked_sendto = mocker.patch('src.server.Server.send_packet')
 
         server = Server(speed=speed)
@@ -74,7 +72,7 @@ class Test_server:
         event_loop.create_task(server.serve_forever('fake_address'))
         await asyncio.sleep(duration, loop=event_loop)
 
-        assert mocked_sendto.call_count == ceil(speed * duration / kilobyte)
+        assert mocked_sendto.call_count == packages
 
     # shutdown should log rest, and close socket
     def test_calculate_packet_loss_should_answer_in_pct_of_lost_packets(self):

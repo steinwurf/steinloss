@@ -1,7 +1,5 @@
-from queue import Queue
 from socket import AF_INET, SOCK_DGRAM
 import socket
-import numpy as np
 
 
 class Probe:
@@ -14,7 +12,7 @@ class Probe:
         self.reorder = 0
         self.sequence_number = None
         self.server_to_client_loss = 0
-        self.suspect = np.zeros(5)
+        self.suspect = [0] * 5
         self.server_address = server_address
         self.address = address
         self.id = 0
@@ -49,8 +47,8 @@ class Probe:
         else:
             lost_pct = self.lost / self.sequence_number
         print(
-            f"received message: {self.sequence_number} | probe id: {self.id} |" +
-            " server->probe loss: {:.2f}%".format(lost_pct * 100),
+            f"received message: {self.sequence_number} | probe id: {self.id} | ",
+            "server->probe loss: {:.2f}%".format(lost_pct * 100),
             end='\r')
 
     def respond_to_server(self, packet: str):
