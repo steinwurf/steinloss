@@ -44,7 +44,7 @@ class TestServer:
     def test_wait_for_probe_should_return_address_of_probe(self, mocker):
         server = Server()
         fake_address = '0,1,2,3', 4321
-        mocker.patch('socket.socket.recvfrom', return_value=[b"packet", fake_address])
+        mocker.patch('socket.socket.recvfrom', return_value=[b"package", fake_address])
 
         assert server.wait_for_probe() == fake_address
 
@@ -69,7 +69,7 @@ class TestServer:
 
         server = Server(speed=speed)
 
-        event_loop.create_task(server.serve_forever('fake_adresse'))
+        event_loop.create_task(server.serve_forever('fake_address'))
         await asyncio.sleep(duration, loop=event_loop)
 
         assert mocked_sendto.call_count == packages

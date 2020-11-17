@@ -115,8 +115,9 @@ class Server:
         sent = self.data_presenter.get_time_table()[one_second_in_the_past].sent
         received = self.data_presenter.get_time_table()[one_second_in_the_past].received
 
-        print(f"{sent} packets sent last second | {received} packets received last second | ",
-              "packet loss: {:.2f}".format(packet_loss * 100),
+        print(f"{sent} packets sent last second |"
+              + f" {received} packets received last second ",
+              " | package loss: {:.2f}".format(packet_loss * 100),
               end='\r')
 
     async def log_forever(self):
