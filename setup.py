@@ -4,8 +4,8 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="steinloss-steinwurf", # Replace with your own username
-    version="0.0.1",
+    name="steinloss-steinwurf",  # Replace with your own username
+    version="0.0.5",
     author="Steinwurf ApS",
     author_email="contact@steinwurf.com",
     description="This is a tool for measuring packages loss, between two endpoint, with a web visualizer.",
@@ -17,6 +17,10 @@ setuptools.setup(
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
+        "Environment :: Console",
+        "Environment :: Web Environment",
+        "Framework :: Dash"
+
     ],
     python_requires='>=3.8',
 )
