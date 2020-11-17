@@ -117,7 +117,7 @@ class Server:
 
         print(f"{sent} packets sent last second |" +
               f" {received} packets received last second "
-              , " | packet loss: {:.2f}".format(packet_loss * 100),
+              , " | package loss: {:.2f}".format(packet_loss * 100),
               end='\r')
 
     async def log_forever(self):
