@@ -20,3 +20,8 @@ def setup(parser: ArgumentParser) -> ArgumentParser:
                         help="Which port to use. Have to be the same, as the servers port")
 
     return parser
+
+
+def cli():
+    parser = setup(ArgumentParser())
+    parser.parse_args()
