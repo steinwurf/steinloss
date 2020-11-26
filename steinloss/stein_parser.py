@@ -3,7 +3,6 @@ import sys
 
 
 def setup(parser: ArgumentParser) -> ArgumentParser:
-    parser.prog = "steinloss"
     parser.description = \
         "A tool for measuring a package loss, between two endpoints. The way it works, is by spinning up a server " \
         "endpoint, that waits for a incoming connection. When the server-side gets pinged by a probe, it will start " \
