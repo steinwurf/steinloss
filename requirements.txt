@@ -5,7 +5,6 @@ dash~=1.13.4
 asyncio-dgram~=1.1.1
 
 Flask~=1.1.2
-asyncio-dgram
 matplotlib
 hurry.filesize~=0.9
 
