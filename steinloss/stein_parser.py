@@ -1,4 +1,5 @@
 from argparse import ArgumentParser
+import sys
 
 
 def setup(parser: ArgumentParser) -> ArgumentParser:
@@ -12,9 +13,11 @@ def setup(parser: ArgumentParser) -> ArgumentParser:
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("-s", "--server", action="store_true",
                        help="Determines if you're on the server side")
-    group.add_argument("-p", "--probe", nargs=1, metavar='target_ip_address',
+    group.add_argument("-p", "--probe", action="store_true",
                        help="Determines if you're on the probe side. "
                             "You have to specify a ip address for the probe to target")
+    parser.add_argument("-i", "--ip-address", action="store", required='-p' in sys.argv or '--probe' in sys.argv,
+                        help="REQUIRED for probe: the ip the probe pings. Server what it listens on")
 
     parser.add_argument("-P", "--port", type=int, default=9090,
                         help="Which port to use. Have to be the same, as the servers port")

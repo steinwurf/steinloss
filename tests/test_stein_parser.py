@@ -27,14 +27,14 @@ class TestParser:
         assert parser.server
 
     def test_stein_parser_probe_variable(self):
-        args = "--probe 0.0.0.0".split(' ')
+        args = "--probe -i 0.0.0.0".split(' ')
 
         parser = self.parser.parse_args(args)
 
         assert parser.probe
 
     def test_stein_parser_probe_abbreviation_returns_true(self):
-        args = '-p 0.0.0.0'.split(' ')
+        args = '-p -i 0.0.0.0'.split(' ')
 
         parser = self.parser.parse_args(args)
 
@@ -53,8 +53,9 @@ class TestParser:
 
         assert isinstance(parser.port, int)
 
-    def test_probe_exits_if_no_ip_is_provided(self):
-        args = ['-p']
+    def test_probe_exits_if_no_ip_is_provided(self, mocker):
+        args = '-p'.split(' ')
+        mocker.patch("sys.argv", return_value=args)
 
         with pytest.raises(SystemExit):
-            parser = self.parser.parse_args(args)
+            parser = self.parser.parse_args()
