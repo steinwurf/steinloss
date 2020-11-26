@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 
 import pytest
 
-from src.stein_parser import setup
+from steinloss.stein_parser import setup
 
 
 class TestParser:
