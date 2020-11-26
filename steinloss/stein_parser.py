@@ -17,10 +17,12 @@ def setup(parser: ArgumentParser) -> ArgumentParser:
                        help="Determines if you're on the probe side. "
                             "You have to specify a ip address for the probe to target")
     parser.add_argument("-i", "--ip-address", action="store", required='-p' in sys.argv or '--probe' in sys.argv,
-                        help="REQUIRED for probe: the ip the probe pings. Server what it listens on")
+                        help="REQUIRED for probe: the ip the probe pings. Server what it listens on",
+                        metavar='')  # Removes caps var name.
 
     parser.add_argument("-P", "--port", type=int, default=9090,
-                        help="Which port to use. Have to be the same, as the servers port")
+                        help="Which port to use. Have to be the same, as the servers port",
+                        metavar='')  # Removes caps var name.
 
     return parser
 
