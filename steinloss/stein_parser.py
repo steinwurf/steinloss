@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 import sys
-
+from steinloss._version import __version__
 from threading import Thread
 
 from steinloss.dashboard import dashboard
@@ -9,6 +9,7 @@ from steinloss.server import Server
 
 
 def setup(parser: ArgumentParser) -> ArgumentParser:
+    parser.prog = "steinloss"
     parser.description = \
         "A tool for measuring a package loss, between two endpoints. The way it works, is by spinning up a server " \
         "endpoint, that waits for a incoming connection. When the server-side gets pinged by a probe, it will start " \
@@ -29,6 +30,8 @@ def setup(parser: ArgumentParser) -> ArgumentParser:
                         help="Which port to use. Have to be the same, as the servers port. Default is 9090",
                         metavar='')  # Removes caps var name.
 
+    parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__)
+
     return parser
 
 
@@ -42,7 +45,7 @@ def task_factory(options):
 
 
 def cli():
-    parser = setup(ArgumentParser(prog='steinloss'))
+    parser = setup(ArgumentParser())
     args = parser.parse_args()
 
     runnable = task_factory(args)

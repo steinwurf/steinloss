@@ -68,3 +68,9 @@ class TestParser:
 
         with pytest.raises(SystemExit):
             self.parser.parse_args()
+
+    def test_have_version_number(self, mocker):
+        args('--version', mocker)
+
+        with pytest.raises(SystemExit):
+            self.parser.parse_args()

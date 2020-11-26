@@ -1,4 +1,5 @@
 import setuptools
+from steinloss._version import __version__
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -7,7 +8,7 @@ REQUIREMENTS = [i.strip() for i in open("requirements.txt").readlines()]
 
 setuptools.setup(
     name="steinloss",  # Replace with your own username
-    version="0.0.2",
+    version=__version__,
     author="Steinwurf ApS",
     author_email="contact@steinwurf.com",
     description="Package loss measuring tool",
