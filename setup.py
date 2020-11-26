@@ -7,7 +7,7 @@ REQUIREMENTS = [i.strip() for i in open("requirements.txt").readlines()]
 
 setuptools.setup(
     name="steinloss",  # Replace with your own username
-    version="0.0.1",
+    version="0.0.2",
     author="Steinwurf ApS",
     author_email="contact@steinwurf.com",
     description="Package loss measuring tool",
