@@ -16,7 +16,7 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/steinwurf/steinloss",
     entry_points={"console_scripts": ['steinloss=steinloss.stein_parser:cli']},
-    packages=setuptools.find_packages(),
+    packages=['steinloss', 'steinloss.dashboard'],
     install_requires=REQUIREMENTS,
     classifiers=[
         "Programming Language :: Python :: 3",
