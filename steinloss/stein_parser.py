@@ -1,6 +1,12 @@
 from argparse import ArgumentParser
 import sys
 
+from threading import Thread
+
+from steinloss.dashboard import dashboard
+from steinloss.probe import Probe
+from steinloss.server import Server
+
 
 def setup(parser: ArgumentParser) -> ArgumentParser:
     parser.description = \
@@ -20,12 +26,42 @@ def setup(parser: ArgumentParser) -> ArgumentParser:
                         metavar='')  # Removes caps var name.
 
     parser.add_argument("-P", "--port", type=int, default=9090,
-                        help="Which port to use. Have to be the same, as the servers port",
+                        help="Which port to use. Have to be the same, as the servers port. Default is 9090",
                         metavar='')  # Removes caps var name.
 
     return parser
 
 
+def task_factory(options):
+    if options.server:
+        return FrontEndAndBackEnd(options.ip_address, options.port)
+    elif options.probe:
+        return Probe((options.ip_address, options.port))
+    else:
+        return None
+
+
 def cli():
-    parser = setup(ArgumentParser())
-    parser.parse_args()
+    parser = setup(ArgumentParser(prog='steinloss'))
+    args = parser.parse_args()
+
+    runnable = task_factory(args)
+    runnable.run()
+
+
+class FrontEndAndBackEnd:
+
+    def __init__(self, ip, port):
+        self.kwargs = {'port': port}
+        if ip is not None:
+            self.kwargs['ip'] = ip
+
+    def run(self):
+        server = Server(**self.kwargs)
+        print(dir(server))
+        t = Thread(target=server.run)
+        t.start()
+
+        dashboard.run()
+
+        t.join()
