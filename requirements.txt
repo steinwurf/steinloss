@@ -1,4 +1,3 @@
-pytest~=6.1.2
 plotly~=4.12.0
 pandas~=1.1.4
 dash~=1.13.4
