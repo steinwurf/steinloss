@@ -17,7 +17,7 @@ gigabyte = 1048576 * kilobyte
 class Server:
     packet_size = kilobyte
 
-    def __init__(self, speed=megabyte * 100, listening_address=('0.0.0.0', 7070),
+    def __init__(self, speed=megabyte * 100, ip='0.0.0.0', port=7070,
                  runtime_of_test=ONE_SECOND * 60 * 30):
         self.last_sent_packet = 0
         self.last_received_packet = 0
@@ -25,7 +25,7 @@ class Server:
         self.socket_timeout = 10  # seconds
         self.log_interval = 1
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.listening_address = listening_address
+        self.listening_address = (ip, port)
         self.id = 0
         self.__interval = 1
         self.speed = speed
