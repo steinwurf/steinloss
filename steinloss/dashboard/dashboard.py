@@ -10,7 +10,7 @@ import plotly
 from dash.dependencies import Input, Output
 
 from steinloss.Data_Presenter import Data_Presenter
-from steinloss.loss_calculator import TimeTable
+from steinloss import TimeTable
 
 loss = 'loss'
 

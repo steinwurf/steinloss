@@ -4,7 +4,7 @@ import pytest
 from freezegun import freeze_time
 
 from steinloss.Data_Presenter import Data_Presenter
-from steinloss.packet_entity import sent_package, receive_package
+from steinloss import sent_package, receive_package
 
 
 class TestDataPresenter:

@@ -5,7 +5,7 @@ from typing import Tuple
 import time
 
 from steinloss.Data_Presenter import Data_Presenter
-from steinloss.packet_entity import sent_package, receive_package, Packet_entity
+from steinloss import sent_package, receive_package, Packet_entity
 
 ONE_SECOND = 1
 
