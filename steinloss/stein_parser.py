@@ -61,7 +61,7 @@ class FrontEndAndBackEnd:
 
     def run(self):
         server = Server(**self.kwargs)
-        print(dir(server))
+
         t = Thread(target=server.run)
         t.start()
 
