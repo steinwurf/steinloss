@@ -1,5 +1,5 @@
 import setuptools
-from steinloss._version import __version__
+from steinloss import __version__
 
 with open("README.md", "r") as fh:
     long_description = fh.read()

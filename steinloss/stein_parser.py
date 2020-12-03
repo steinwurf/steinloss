@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 import sys
-from steinloss._version import __version__
+from steinloss import __version__
 from threading import Thread
 
 from steinloss.dashboard import dashboard
@@ -16,6 +16,8 @@ def setup(parser: ArgumentParser) -> ArgumentParser:
         "sending packages to it, and the probe will respond on each packages." \
         "The package loss is calculated by keeping track of the id of the packet." \
         "Data is shown on the a website on port 8080, on the server side"
+    parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__)
+
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("-s", "--server", action="store_true",
                        help="Determines if you're on the server side")
@@ -29,8 +31,6 @@ def setup(parser: ArgumentParser) -> ArgumentParser:
     parser.add_argument("-P", "--port", type=int, default=9090,
                         help="Which port to use. Have to be the same, as the servers port. Default is 9090",
                         metavar='')  # Removes caps var name.
-
-    parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__)
 
     return parser
 
