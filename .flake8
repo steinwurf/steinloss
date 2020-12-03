@@ -89,7 +89,8 @@ hang-closing = False
 
 # Specify a list of codes to ignore.
 ignore =
-    W503
+    W503,
+    F841 test/*.py # ignores unused variables in tests
 # Specify the list of error codes you wish Flake8 to report.
 select =
     E,

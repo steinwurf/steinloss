@@ -1,8 +1,9 @@
-pytest
-plotly~=4.8.2
-pandas~=1.0.5
+plotly~=4.12.0
+pandas~=1.1.4
 dash~=1.13.4
+asyncio-dgram~=1.1.1
 
 Flask~=1.1.2
-mock~=4.0.2
-timeloop
+matplotlib
+hurry.filesize~=0.9
+

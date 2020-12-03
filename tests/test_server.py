@@ -1,112 +1,92 @@
 import asyncio
-import socket
-from datetime import datetime
-from math import ceil
-
 import pytest
-from src.server import Server
-from src.packet_entity import Packet_entity
+
+from datetime import datetime
+from steinloss.Data_Presenter import Data_Presenter
+from steinloss.package import SentPackage, ReceivePackage
+from steinloss.server import Server
 
 kilobyte = 1024
 
 
-@pytest.mark.parametrize(
-    "speed, interval", [(kilobyte, 1), (2 * kilobyte, 0.5), (4 * kilobyte, 0.25)]
-)
-def test_two_kilobytes_should_set_interval_to_half(speed, interval):
-    server = Server()
-    server.speed = speed
+class TestServer:
 
-    assert server.interval == interval
+    def teardown_method(self):
+        Data_Presenter.clear_instance()
 
+    @pytest.mark.parametrize(
+        "speed, interval", [(kilobyte, 1), (2 * kilobyte, 0.5), (4 * kilobyte, 0.25)]
+    )
+    def test_two_kilobytes_should_set_interval_to_half(self, speed, interval):
+        server = Server()
+        server.speed = speed
 
-def test_construct_server_with_five_kilobytes():
-    five_kilobytes = 5120
-    server = Server(five_kilobytes)
+        assert server.interval == interval
 
-    assert server.interval == 0.2
+    def test_construct_server_with_five_kilobytes(self):
+        five_kilobytes = 5120
+        server = Server(five_kilobytes)
 
+        assert server.interval == 0.2
 
-@pytest.mark.parametrize(
-    "index, packet_id", [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5)]
-)
-def test_send_packet_should_save_entry(mocker, index, packet_id, freezer):
-    mocker.patch('socket.socket.sendto')
+    @pytest.mark.parametrize("packets", [1, 2, 3, 4])
+    def test_send_packet_should_save_entry(self, mocker, packets):
+        mocker.patch('socket.socket')
+        time = datetime.now()
+        mocker.patch('steinloss.server.Server.timestamp', return_value=time)
+        server = Server()
 
-    server = Server()
-    for _ in range(index + 1):
-        server.send_packet(None)
+        for i in range(packets):
+            server.send_packet('ip_address')
 
-    expected = Packet_entity(packet_id, datetime.now())
-    assert server.entries[index].id == expected.id, "id"
-    assert server.entries[index].time == expected.time, "timestamp"
+        assert server.data_presenter.get_time_table()[time].sent == packets
 
+    def test_wait_for_probe_should_return_address_of_probe(self, mocker):
+        server = Server()
+        fake_address = '0,1,2,3', 4321
+        mocker.patch('socket.socket.recvfrom', return_value=[b"package", fake_address])
 
-def test_send_packet_should_call_socket_sendto(mocker):
-    mocked_socket = mocker.patch('socket.socket.sendto')
-    server = Server()
-    server.send_packet('address placeholder')
+        assert server.wait_for_probe() == fake_address
 
-    assert mocked_socket.call_count == 1
+    @pytest.mark.parametrize(
+        "iterations", [1, 2, 3]
+    )
+    def test_send_packet_should_should_send_id_to_client(self, mocker, iterations):
+        server = Server()
+        probe_address = '1,3,3,7', 1001
+        mocked_sendto = mocker.patch('socket.socket.sendto')
+        for i in range(iterations):
+            server.send_packet(probe_address)
+            mocked_sendto.assert_called_with(('%d' % i).encode(), probe_address)
 
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "speed, duration, packages", [(4096, 0.24, 1), (8192, 0.24, 2)]
+    )
+    async def test_serve_forever_should_send_packets_according_to_speed(
+            self, mocker, event_loop, speed, duration, packages):
+        mocked_sendto = mocker.patch('steinloss.server.Server.send_packet')
 
-def test_wait_for_probe_should_return_address_of_probe(mocker):
-    server = Server()
+        server = Server(speed=speed)
 
-    fake_address = ('0,1,2,3', 4321)
-    mocker.patch('socket.socket.recvfrom', return_value=['packet', fake_address])
+        event_loop.create_task(server.serve_forever('fake_address'))
+        await asyncio.sleep(duration, loop=event_loop)
 
-    assert server.wait_for_probe() == fake_address
+        assert mocked_sendto.call_count == packages
 
+    # shutdown should log rest, and close socket
+    def test_calculate_packet_loss_should_answer_in_pct_of_lost_packets(self):
+        server = Server()
+        time = datetime.now()
 
-def test_socket_bind_throws_exception_should__exit(mocker):
-    server = Server()
-    mocker.patch('socket.socket.bind', side_effect=socket.error())
-    with pytest.raises(SystemExit, match=r"ERROR"):
-        server.ready_socket()
+        server.save_entry(SentPackage("1", time))
+        server.save_entry(SentPackage("2", time))
+        server.save_entry(ReceivePackage("1", "1", time))
 
-
-@pytest.mark.parametrize(
-    "iterations", [1, 2, 3]
-)
-def test_send_packet_should_should_send_id_to_client(mocker, iterations):
-    server = Server()
-    probe_address = '1,3,3,7', 1001
-    mocked_sendto = mocker.patch('socket.socket.sendto')
-    for i in range(iterations):
-        server.send_packet(probe_address)
-        mocked_sendto.assert_called_with(('%d' % i).encode(), probe_address)
-
-
-@pytest.mark.asyncio
-async def test_log_forever_should_log_twice_after_two_second(mocker, event_loop):
-    server = Server()
-    server.log_interval = 0.01
-
-    mocked_log_method = mocker.patch.object(server.logger, 'log')
-    event_loop.create_task(server.log_forever())
-    await asyncio.sleep(0.1, loop=event_loop)
-
-    assert mocked_log_method.call_count == 10
+        assert server.calculate_packet_loss_in_pct(time) == 0.5
 
 
-@pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "speed, duration", [(4096, 0.2), (196608, 0.1)]
-)
-async def test_serve_forever_should_send_packets_according_to_speed(mocker, event_loop, speed, duration):
-    mocked_sendto = mocker.patch('src.server.Server.send_packet')
-
-    server = Server(speed=speed)
-
-    event_loop.create_task(server.serve_forever('fake_adresse'))
-    await asyncio.sleep(duration, loop=event_loop)
-
-    assert mocked_sendto.call_count == ceil(speed * duration / kilobyte)
-
-
-# interupt run forever should call shutdown
-# shutdown should log rest, and close socket
+# divide by zero in calculate loss
 
 
 class FakeTime:
