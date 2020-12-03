@@ -2,9 +2,9 @@ import asyncio
 import pytest
 
 from datetime import datetime
-from src.Data_Presenter import Data_Presenter
-from src.packet_entity import sent_package, receive_package
-from src.server import Server
+from steinloss.Data_Presenter import Data_Presenter
+from steinloss.package import SentPackage, ReceivePackage
+from steinloss.server import Server
 
 kilobyte = 1024
 
@@ -33,7 +33,7 @@ class TestServer:
     def test_send_packet_should_save_entry(self, mocker, packets):
         mocker.patch('socket.socket')
         time = datetime.now()
-        mocker.patch('src.server.Server.timestamp', return_value=time)
+        mocker.patch('steinloss.server.Server.timestamp', return_value=time)
         server = Server()
 
         for i in range(packets):
@@ -65,7 +65,7 @@ class TestServer:
     )
     async def test_serve_forever_should_send_packets_according_to_speed(
             self, mocker, event_loop, speed, duration, packages):
-        mocked_sendto = mocker.patch('src.server.Server.send_packet')
+        mocked_sendto = mocker.patch('steinloss.server.Server.send_packet')
 
         server = Server(speed=speed)
 
@@ -79,9 +79,9 @@ class TestServer:
         server = Server()
         time = datetime.now()
 
-        server.save_entry(sent_package("1", time))
-        server.save_entry(sent_package("2", time))
-        server.save_entry(receive_package("1", "1", time))
+        server.save_entry(SentPackage("1", time))
+        server.save_entry(SentPackage("2", time))
+        server.save_entry(ReceivePackage("1", "1", time))
 
         assert server.calculate_packet_loss_in_pct(time) == 0.5
 

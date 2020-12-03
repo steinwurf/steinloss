@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from src.packet_entity import Packet_entity, receive_package, sent_package
+from steinloss.package import Package, ReceivePackage, SentPackage
 
 
 class TimeEntry:
@@ -10,14 +10,14 @@ class TimeEntry:
         self.received = 0
 
     def add_packet(self, packet):
-        if type(packet) is sent_package:
+        if type(packet) is SentPackage:
             self.sent += 1
             self.loss += 1
-        elif type(packet) is receive_package:
+        elif type(packet) is ReceivePackage:
             self.received += 1
 
     def __repr__(self):
-        return f"{type(self).__name__}: loss:{self.loss} - sent_package:{self.sent} received:{self.received}"
+        return f"{type(self).__name__}: loss:{self.loss} - SentPackage:{self.sent} received:{self.received}"
 
 
 class TimeTable:
@@ -80,10 +80,10 @@ class Loss_Calculator:
         self.time_table = TimeTable()
         self.packet_table = packet_table()
 
-    def add(self, packet: Packet_entity):
-        if type(packet) is sent_package:
+    def add(self, packet: Package):
+        if type(packet) is SentPackage:
             self.packet_table[packet.id].sent_at = packet.time
-        elif type(packet) is receive_package:
+        elif type(packet) is ReceivePackage:
             self.packet_table[packet.id].received_at = packet.time
 
             sent_timestamp = self.packet_table[packet.id].sent_at
@@ -92,7 +92,7 @@ class Loss_Calculator:
         self.time_table[packet.time].add_packet(packet)
 
     def __contains__(self, item):
-        if isinstance(item, Packet_entity):
+        if isinstance(item, Package):
             return item.id in self.packet_table
         elif isinstance(item, datetime):
             return item in self.time_table

@@ -1,6 +1,11 @@
 [![time tracker](https://wakatime.com/badge/github/steinwurf/steinloss.svg)](https://wakatime.com/badge/github/steinwurf/steinloss)
 ![Lint and test](https://github.com/steinwurf/steinloss/workflows/Lint%20and%20test/badge.svg?branch=master)
-## Steinloss:
+# Steinloss:
+This is a tool for measuring packages loss, between two endpoint, with a web visualizer.
+
+## Usage
+
+ 
 ## Test
 Test made with ip-netns, where a random loss function is set to 1 pct
 

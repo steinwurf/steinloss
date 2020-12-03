@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 from typing import Tuple
 import time
 
-from src.Data_Presenter import Data_Presenter
-from src.packet_entity import sent_package, receive_package, Packet_entity
+from steinloss.Data_Presenter import Data_Presenter
+from steinloss.package import SentPackage, ReceivePackage, Package
 
 ONE_SECOND = 1
 
@@ -17,7 +17,7 @@ gigabyte = 1048576 * kilobyte
 class Server:
     packet_size = kilobyte
 
-    def __init__(self, speed=megabyte * 100, listening_address=('0.0.0.0', 7070),
+    def __init__(self, speed=megabyte * 100, ip='0.0.0.0', port=7070,
                  runtime_of_test=ONE_SECOND * 60 * 30):
         self.last_sent_packet = 0
         self.last_received_packet = 0
@@ -25,7 +25,7 @@ class Server:
         self.socket_timeout = 10  # seconds
         self.log_interval = 1
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.listening_address = listening_address
+        self.listening_address = (ip, port)
         self.id = 0
         self.__interval = 1
         self.speed = speed
@@ -46,12 +46,12 @@ class Server:
     def send_packet(self, address):
         packet = "%d" % self.id
 
-        package = sent_package(packet, self.timestamp())
+        package = SentPackage(packet, self.timestamp())
         self.save_entry(package)
         self.id += 1
         self.server_socket.sendto(packet.encode(), address)
 
-    def save_entry(self, package: Packet_entity):
+    def save_entry(self, package: Package):
         self.data_presenter.append(package)
 
     def run(self):
@@ -176,5 +176,5 @@ class EchoServerProtocol(asyncio.DatagramProtocol):
         sent_packet = numbers[0]
         received_packet = numbers[1]
 
-        package = receive_package(sent_packet, received_packet, datetime.now())
+        package = ReceivePackage(sent_packet, received_packet, datetime.now())
         self.server.data_presenter.append(package)

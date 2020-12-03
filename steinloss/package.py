@@ -1,7 +1,7 @@
 from datetime import datetime
 
 
-class Packet_entity:
+class Package:
     def __init__(self, packet_content, time=datetime.now()):
         self.id = packet_content
         self.time = time
@@ -15,12 +15,12 @@ class Packet_entity:
         return f"id: {self.id} | time:  {self.time.strftime('%H:%M:%S')}"
 
 
-class sent_package(Packet_entity):
+class SentPackage(Package):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
 
-class receive_package(Packet_entity):
+class ReceivePackage(Package):
     def __init__(self, sent_id, recv_id, *kwargs):
         self.recv_id = recv_id
         super().__init__(sent_id, *kwargs)
