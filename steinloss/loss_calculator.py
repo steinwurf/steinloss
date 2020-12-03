@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from steinloss import Package, ReceivePackage, SentPackage
+from steinloss.package import Package, ReceivePackage, SentPackage
 
 
 class TimeEntry:

@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 import pytest
-from steinloss import setup
+from steinloss.stein_parser import setup
 
 
 def args(arr, mocker):

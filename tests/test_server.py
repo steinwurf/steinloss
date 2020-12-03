@@ -3,8 +3,8 @@ import pytest
 
 from datetime import datetime
 from steinloss.Data_Presenter import Data_Presenter
-from steinloss import SentPackage, ReceivePackage
-from steinloss import Server
+from steinloss.package import SentPackage, ReceivePackage
+from steinloss.server import Server
 
 kilobyte = 1024
 

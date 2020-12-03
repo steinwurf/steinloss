@@ -5,7 +5,7 @@ from threading import Thread
 
 from steinloss.dashboard import dashboard
 from steinloss.probe import Probe
-from steinloss import Server
+from steinloss.server import Server
 
 
 def setup(parser: ArgumentParser) -> ArgumentParser:

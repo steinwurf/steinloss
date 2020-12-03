@@ -1,6 +1,6 @@
-from steinloss import PacketEntry
-from steinloss import Loss_Calculator
-from steinloss import TimeTable
+from steinloss.loss_calculator import PacketEntry
+from steinloss.loss_calculator import Loss_Calculator
+from steinloss.loss_calculator import TimeTable
 
 
 class Data_Presenter(object):
