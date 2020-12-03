@@ -1,6 +1,6 @@
 from steinloss import dashboard
 
-from .packet_entity import *
+from .package import *
 from .loss_calculator import *
 from .loss_calculator import *
 from .probe import *

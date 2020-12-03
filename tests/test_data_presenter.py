@@ -4,7 +4,7 @@ import pytest
 from freezegun import freeze_time
 
 from steinloss.Data_Presenter import Data_Presenter
-from steinloss import sent_package, receive_package
+from steinloss import SentPackage, ReceivePackage
 
 
 class TestDataPresenter:
@@ -16,7 +16,7 @@ class TestDataPresenter:
         assert my_singleton is not None
 
     def test_data_presenter_can_take_an_argument(self):
-        test_data = sent_package("1")
+        test_data = SentPackage("1")
         data_presenter = Data_Presenter.get_instance()
 
         data_presenter.append(test_data)
@@ -45,7 +45,7 @@ class TestDataPresenter:
         data_presenter1 = Data_Presenter.get_instance()
         data_presenter2 = Data_Presenter.get_instance()
 
-        test_data = sent_package("1")
+        test_data = SentPackage("1")
         data_presenter1.append(test_data)
 
         from_different_object = data_presenter2.latest_packages().pop()
@@ -55,8 +55,8 @@ class TestDataPresenter:
     @freeze_time(auto_tick_seconds=1)
     def test_append_method_appends_data(self):
         data_presenter = Data_Presenter.get_instance()
-        test_data_1 = sent_package("1")
-        test_data_2 = receive_package("1", "1")
+        test_data_1 = SentPackage("1")
+        test_data_2 = ReceivePackage("1", "1")
 
         data_presenter.append(test_data_1)
         data_presenter.append(test_data_2)
@@ -68,8 +68,8 @@ class TestDataPresenter:
     @freeze_time(auto_tick_seconds=1)
     def test_get_latest_data_by_amount_of_entries(self):
         data_presenter = Data_Presenter.get_instance()
-        test_data_1 = sent_package("1")
-        test_data_2 = sent_package("2")
+        test_data_1 = SentPackage("1")
+        test_data_2 = SentPackage("2")
 
         data_presenter.append(test_data_1)
         data_presenter.append(test_data_2)
@@ -81,8 +81,8 @@ class TestDataPresenter:
     def test_get_package_info_at_timestamp(self):
         data_presenter = Data_Presenter.get_instance()
         time = datetime.now()
-        data_presenter.append(sent_package("1", time))
-        data_presenter.append(sent_package("2", time))
+        data_presenter.append(SentPackage("1", time))
+        data_presenter.append(SentPackage("2", time))
 
         # get time table
         package_info = data_presenter.get_time_table()

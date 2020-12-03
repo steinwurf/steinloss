@@ -3,7 +3,7 @@ import pytest
 
 from datetime import datetime
 from steinloss.Data_Presenter import Data_Presenter
-from steinloss import sent_package, receive_package
+from steinloss import SentPackage, ReceivePackage
 from steinloss import Server
 
 kilobyte = 1024
@@ -79,9 +79,9 @@ class TestServer:
         server = Server()
         time = datetime.now()
 
-        server.save_entry(sent_package("1", time))
-        server.save_entry(sent_package("2", time))
-        server.save_entry(receive_package("1", "1", time))
+        server.save_entry(SentPackage("1", time))
+        server.save_entry(SentPackage("2", time))
+        server.save_entry(ReceivePackage("1", "1", time))
 
         assert server.calculate_packet_loss_in_pct(time) == 0.5
 

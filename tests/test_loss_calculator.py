@@ -2,7 +2,7 @@ from freezegun import freeze_time
 from datetime import datetime, timedelta
 
 from steinloss import Loss_Calculator, TimeTable
-from steinloss import sent_package, receive_package
+from steinloss import SentPackage, ReceivePackage
 
 
 class TestLossCalculator:
@@ -11,7 +11,7 @@ class TestLossCalculator:
 
     def test_loss_calculator_can_add_packet_entry(self, freezer):
         loss_calculator = Loss_Calculator()
-        packet = sent_package('1', datetime.now())
+        packet = SentPackage('1', datetime.now())
 
         loss_calculator.add(packet)
 
@@ -23,8 +23,8 @@ class TestLossCalculator:
         first_time = datetime.now()
         second_time = datetime.now()
 
-        packet_one = sent_package('1', first_time)
-        packet_two = sent_package('2', second_time)
+        packet_one = SentPackage('1', first_time)
+        packet_two = SentPackage('2', second_time)
         loss_calculator.add(packet_one)
         loss_calculator.add(packet_two)
 
@@ -36,8 +36,8 @@ class TestLossCalculator:
         loss_calculator = Loss_Calculator()
         at_zero_second = datetime.now()
         at_zero_point_5_second = datetime.now()
-        packet_at_zero_second = sent_package('1', at_zero_second)
-        packet_at_zero_point_5_second = sent_package('2', at_zero_point_5_second)
+        packet_at_zero_second = SentPackage('1', at_zero_second)
+        packet_at_zero_point_5_second = SentPackage('2', at_zero_point_5_second)
 
         loss_calculator.add(packet_at_zero_second)
         loss_calculator.add(packet_at_zero_point_5_second)
@@ -48,8 +48,8 @@ class TestLossCalculator:
         loss_calculator = Loss_Calculator()
         time_stamp = datetime.now()
 
-        loss_calculator.add(sent_package('1', time_stamp))
-        loss_calculator.add(sent_package('2', time_stamp))
+        loss_calculator.add(SentPackage('1', time_stamp))
+        loss_calculator.add(SentPackage('2', time_stamp))
 
         assert loss_calculator[time_stamp].sent == 2
 
@@ -57,8 +57,8 @@ class TestLossCalculator:
         loss_calculator = Loss_Calculator()
         time_stamp = datetime.now()
 
-        loss_calculator.add(sent_package('1', time_stamp))
-        loss_calculator.add(receive_package('1', '1', time_stamp))
+        loss_calculator.add(SentPackage('1', time_stamp))
+        loss_calculator.add(ReceivePackage('1', '1', time_stamp))
 
         assert loss_calculator[time_stamp].received == 1
 
@@ -66,19 +66,19 @@ class TestLossCalculator:
         loss_calculator = Loss_Calculator()
         time_stamp = datetime.now()
 
-        loss_calculator.add(sent_package('1', time_stamp))
-        loss_calculator.add(sent_package('2', time_stamp))
-        loss_calculator.add(sent_package('3', time_stamp))
+        loss_calculator.add(SentPackage('1', time_stamp))
+        loss_calculator.add(SentPackage('2', time_stamp))
+        loss_calculator.add(SentPackage('3', time_stamp))
 
-        loss_calculator.add(receive_package('1', '1', time_stamp))
-        loss_calculator.add(receive_package('3', '2', time_stamp))
+        loss_calculator.add(ReceivePackage('1', '1', time_stamp))
+        loss_calculator.add(ReceivePackage('3', '2', time_stamp))
 
         assert loss_calculator[time_stamp].loss == 1
 
     def test_sent_package_added_to_calculator_is_logged(self):
         loss_calculator = Loss_Calculator()
         time_stamp = datetime.now()
-        package = sent_package('1', time_stamp)
+        package = SentPackage('1', time_stamp)
 
         loss_calculator.add(package)
 
@@ -87,7 +87,7 @@ class TestLossCalculator:
     def test_sent_package_added_to_calculator_is_not_received(self):
         loss_calculator = Loss_Calculator()
         time_stamp = datetime.now()
-        package = sent_package('1', time_stamp)
+        package = SentPackage('1', time_stamp)
 
         loss_calculator.add(package)
 
@@ -116,7 +116,7 @@ class TestLossCalculator:
     def test_get_last_package(self):
         loss_calculator = Loss_Calculator()
 
-        package = sent_package("1")
+        package = SentPackage("1")
         loss_calculator.add(package)
 
         last_package = loss_calculator.get_last_packages(1).pop()
@@ -124,8 +124,8 @@ class TestLossCalculator:
 
     def test_get_n_latest_packages_where_n_is_equal_to_length(self):
         loss_calculator = Loss_Calculator()
-        loss_calculator.add(sent_package("1"))
-        loss_calculator.add(sent_package("2"))
+        loss_calculator.add(SentPackage("1"))
+        loss_calculator.add(SentPackage("2"))
 
         packages = loss_calculator.get_last_packages(2)
 
@@ -134,9 +134,9 @@ class TestLossCalculator:
     @freeze_time(auto_tick_seconds=1)
     def test_get_n_latest_packages(self):
         loss_calculator = Loss_Calculator()
-        p1 = sent_package("1", datetime.now())
-        p2 = sent_package("2")
-        p3 = sent_package("3")
+        p1 = SentPackage("1", datetime.now())
+        p2 = SentPackage("2")
+        p3 = SentPackage("3")
 
         loss_calculator.add(p1)
         loss_calculator.add(p2)

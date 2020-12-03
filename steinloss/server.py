@@ -5,7 +5,7 @@ from typing import Tuple
 import time
 
 from steinloss.Data_Presenter import Data_Presenter
-from steinloss import sent_package, receive_package, Packet_entity
+from steinloss import SentPackage, ReceivePackage, Package
 
 ONE_SECOND = 1
 
@@ -46,12 +46,12 @@ class Server:
     def send_packet(self, address):
         packet = "%d" % self.id
 
-        package = sent_package(packet, self.timestamp())
+        package = SentPackage(packet, self.timestamp())
         self.save_entry(package)
         self.id += 1
         self.server_socket.sendto(packet.encode(), address)
 
-    def save_entry(self, package: Packet_entity):
+    def save_entry(self, package: Package):
         self.data_presenter.append(package)
 
     def run(self):
@@ -176,5 +176,5 @@ class EchoServerProtocol(asyncio.DatagramProtocol):
         sent_packet = numbers[0]
         received_packet = numbers[1]
 
-        package = receive_package(sent_packet, received_packet, datetime.now())
+        package = ReceivePackage(sent_packet, received_packet, datetime.now())
         self.server.data_presenter.append(package)
