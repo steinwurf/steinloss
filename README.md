@@ -1,5 +1,7 @@
 [![time tracker](https://wakatime.com/badge/github/steinwurf/steinloss.svg)](https://wakatime.com/badge/github/steinwurf/steinloss)
 ![Lint and test](https://github.com/steinwurf/steinloss/workflows/Lint%20and%20test/badge.svg?branch=master)
+[![PyPI version](https://badge.fury.io/py/steinloss.svg)](https://badge.fury.io/py/steinloss)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/steinloss)
 # Steinloss:
 This is a tool for measuring packages loss, between two endpoint, with a web visualizer.
 
