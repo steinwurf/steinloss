@@ -103,7 +103,7 @@ def update_graph_live(n):
 
 
 def run():
-    app.run_server(host='127.0.0.1', port=8050)
+    app.run_server(host='127.0.0.1', port=8050, debug=False)
 
 
 if __name__ == '__main__':
