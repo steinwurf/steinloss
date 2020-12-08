@@ -1,4 +1,5 @@
 from argparse import ArgumentParser
+from argparse import Action
 import sys
 from steinloss import __version__
 from threading import Thread
@@ -6,6 +7,31 @@ from threading import Thread
 from steinloss.dashboard import dashboard
 from steinloss.probe import Probe
 from steinloss.server import Server
+
+byte = 1024
+mb = byte * byte
+
+
+class SpeedConverter(Action):
+    def __init__(self, option_strings, dest, **kwargs):
+        super().__init__(option_strings, dest, **kwargs)
+        self.speeds = {
+            '4mb': 4 * mb,
+            '8mb': 8 * mb,
+            '16mb': 16 * mb
+        }
+        self.help = f"Choose from one of the preset speeds: {list(self.speeds.keys())}," \
+                    " or input your own speed in a bytes/sec. Default is 4mb"
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        if values not in self.speeds.keys():
+            speed = int(values)
+        elif values is None:
+            speed = self.speeds['4mb']
+        else:
+            speed = self.speeds[values]
+
+        setattr(namespace, self.dest, speed)
 
 
 def setup(parser: ArgumentParser) -> ArgumentParser:
@@ -31,6 +57,7 @@ def setup(parser: ArgumentParser) -> ArgumentParser:
     parser.add_argument("-P", "--port", type=int, default=9090,
                         help="Which port to use. Have to be the same, as the servers port. Default is 9090",
                         metavar='')  # Removes caps var name.
+    parser.add_argument("--speed", action=SpeedConverter, default=4194304)
 
     return parser
 
