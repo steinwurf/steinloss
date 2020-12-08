@@ -1,4 +1,5 @@
 import setuptools
+
 from steinloss import __version__
 
 with open("README.md", "r") as fh:
@@ -26,5 +27,5 @@ setuptools.setup(
         "Environment :: Web Environment",
         "Framework :: Dash"
     ],
-    python_requires='>=3.8',
+    python_requires='>=3.7',
 )

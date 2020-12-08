@@ -1,6 +1,5 @@
 import random
 from datetime import datetime, timedelta
-from hurry.filesize import size, verbose
 
 import dash
 import dash_core_components as dcc
@@ -8,6 +7,7 @@ import dash_html_components as html
 import numpy
 import plotly
 from dash.dependencies import Input, Output
+from hurry.filesize import size, verbose
 
 from steinloss.Data_Presenter import Data_Presenter
 from steinloss.loss_calculator import TimeTable
@@ -19,7 +19,7 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 app.layout = html.Div(
     html.Div([
-        html.H4('TERRA Satellite Live Feed'),
+        html.H4('Steinloss: package loss'),
         html.Div(id='live-update-text'),
         dcc.Graph(id='live-update-graph'),
         dcc.Interval(
@@ -46,7 +46,7 @@ def update_metrics(n):
     speed = size(time_entry.sent * 1024, system=verbose)
 
     return [
-        html.Span(f"Package speed: {speed}/s", style=style),
+        html.Span(f"Actual package speed: {speed}/s", style=style),
     ]
 
 

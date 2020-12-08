@@ -1,9 +1,9 @@
-from argparse import ArgumentParser
-from argparse import Action
 import sys
-from steinloss import __version__
+from argparse import Action
+from argparse import ArgumentParser
 from threading import Thread
 
+from steinloss import __version__
 from steinloss.dashboard import dashboard
 from steinloss.probe import Probe
 from steinloss.server import Server
@@ -57,14 +57,14 @@ def setup(parser: ArgumentParser) -> ArgumentParser:
     parser.add_argument("-P", "--port", type=int, default=9090,
                         help="Which port to use. Have to be the same, as the servers port. Default is 9090",
                         metavar='')  # Removes caps var name.
-    parser.add_argument("--speed", action=SpeedConverter, default=4194304)
+    parser.add_argument("--speed", action=SpeedConverter, default=4194304)  # 4mb
 
     return parser
 
 
 def task_factory(options):
     if options.server:
-        return FrontEndAndBackEnd(options.ip_address, options.port)
+        return FrontEndAndBackEnd(options.ip_address, options.port, options.speed)
     elif options.probe:
         return Probe((options.ip_address, options.port))
     else:
@@ -81,8 +81,10 @@ def cli():
 
 class FrontEndAndBackEnd:
 
-    def __init__(self, ip, port):
-        self.kwargs = {'port': port}
+    def __init__(self, ip, port, speed):
+        self.kwargs = {}
+        self.kwargs['port'] = port
+        self.kwargs['speed'] = speed
         if ip is not None:
             self.kwargs['ip'] = ip
 

@@ -6,20 +6,31 @@
 This is a tool for measuring packages loss, between two endpoint, with a web visualizer.
 
 ## Usage
+On the server end, run:
+- `pip install steinloss`
+- `python -m steinloss --server`
 
- 
-## Test
-Test made with ip-netns, where a random loss function is set to 1 pct
+On the probe end, run:
+- `pip install steinloss`
+- `python -m steinloss --probe --ip-address $IP_OF_SERVER`
 
-![setup](media/test_1pct_setup.png)
 
-The results of the test, ended up very close to 1 percent
+The server end will host a gui on port 8050, where the stats are visible. It looks like this:
+![gui](assets/readme/gui.png)
 
-![results](media/test_1pct.png)
 
-## Demo
+## Build and release
+To make a new release, go to github release, and draft a new release. A github action will take care of building, and publishing the tar and binary to pypi.
+
+### Demo with artificial packet loss
 |The demo is made for linux|
 | --- |
+First we install steinloss
+
+```
+pip3 install steinloss
+``
+
 To run a demo of the tool, we're setting up a virtual network on your machine using ip nets.
 We're making a network `n1` and `n2` by running
 ```
@@ -30,11 +41,11 @@ Now we would like to run the server on `n1` and the probe on `n2`
 This is done with the following commands in two different terminals:
 
 ```bash
-sudo ip netns exec ns1 bash -c "sudo -u $USER python3 steinloss py s"
+sudo ip netns exec ns1 bash -c "sudo -u $USER python3 -m steinloss -s"
 ```
 
 ```bash
-sudo ip netns exec ns2 bash -c "sudo -u $USER python3 steinloss py p"
+sudo ip netns exec ns2 bash -c "sudo -u $USER python3 -m steinloss -p -i 10.0.0.1"
 ```
 For example:
 
@@ -52,10 +63,13 @@ Now we can modify the packet loss by using the replace command. To set the packe
 ```bash
 sudo ip netns exec ns1 tc qdisc replace dev h1 root netem loss 20%
 ```
-
+#### Cleanup
 The virtual networks can be removed again with:
 ```bash
 sudo ip netns delete ns1 && sudo ip netns delete ns2
 ```
 
-
+And uninstall steinloss:
+```
+pip3 uninstall steinloss
+```
