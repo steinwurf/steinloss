@@ -6,18 +6,23 @@
 This is a tool for measuring packages loss, between two endpoint, with a web visualizer.
 
 ## Usage
+On the server end, run:
+- `pip install steinloss`
+- `python -m steinloss --server`
 
- 
-## Test
-Test made with ip-netns, where a random loss function is set to 1 pct
+On the probe end, run:
+- `pip install steinloss`
+- `python -m steinloss --probe --ip-address $IP_OF_SERVER`
 
-![setup](media/test_1pct_setup.png)
 
-The results of the test, ended up very close to 1 percent
+The server end will host a gui on port 8050, where the stats are visible. It looks like this:
+![gui](assets/readme/gui.png)
 
-![results](media/test_1pct.png)
 
-## Demo
+## Build and release
+To make a new release, go to github release, and draft a new release. A github action will take care of building, and publishing the tar and binary to pypi.
+
+### Demo with artificial packet loss
 |The demo is made for linux|
 | --- |
 To run a demo of the tool, we're setting up a virtual network on your machine using ip nets.
