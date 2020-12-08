@@ -91,6 +91,7 @@ hang-closing = False
 ignore =
     W503,
     F841 test/*.py # ignores unused variables in tests
+    F401 */__init__.py # ignores unused imports in __init__ files
 # Specify the list of error codes you wish Flake8 to report.
 select =
     E,

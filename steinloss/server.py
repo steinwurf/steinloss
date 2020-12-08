@@ -3,6 +3,7 @@ import socket
 from datetime import datetime, timedelta
 from typing import Tuple
 import time
+from steinloss import log
 
 from steinloss.Data_Presenter import Data_Presenter
 from steinloss.package import SentPackage, ReceivePackage, Package
@@ -22,7 +23,7 @@ class Server:
         self.last_sent_packet = 0
         self.last_received_packet = 0
         self.time_of_sample_size = runtime_of_test
-        self.socket_timeout = 10  # seconds
+        self.socket_timeout = 60 * 5  # seconds
         self.log_interval = 1
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.listening_address = (ip, port)
@@ -43,6 +44,31 @@ class Server:
     def interval(self):
         return self.__interval
 
+    def run(self):
+        self.ready_event_loop()
+        self.ready_socket()
+
+        try:
+            address = self.wait_for_probe()
+            self.run_loop(address)
+        except Exception as e:
+            log("Server timeout. Client didn't connect to server")
+            log(e)
+            raise e
+
+    def ready_event_loop(self):
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+    def ready_socket(self):
+        try:
+            # Assign IP address and port number to socket
+            self.server_socket.bind(self.listening_address)
+        except socket.error as error:
+            log("socket could not connect to host")
+            self.shutdown()
+            raise error
+
     def send_packet(self, address):
         packet = "%d" % self.id
 
@@ -51,20 +77,18 @@ class Server:
         self.id += 1
         self.server_socket.sendto(packet.encode(), address)
 
-    def save_entry(self, package: Package):
-        self.data_presenter.append(package)
+    def timestamp(self):
+        return datetime.now()
 
-    def run(self):
-        self.ready_event_loop()
-        self.ready_socket()
+    def wait_for_probe(self):
+        self.server_socket.settimeout(self.socket_timeout)
+        log("Server ready at: %s %s" % self.listening_address)
+        log("Waiting for a probe to ping")
+        request_and_address = self.server_socket.recvfrom(1024)
 
-        try:
-            address = self.wait_for_probe()
-            # try:
-            self.run_loop(address)
-        except Exception as e:
-            print("Server timeout. Client didn't connect to server")
-            print(e)
+        address: Tuple[str, int] = request_and_address[1]
+        log(f"Request from {address[0]}{address[1]}")
+        return address
 
     def run_loop(self, address):
 
@@ -77,35 +101,28 @@ class Server:
         )
         transport, protocol = loop.run_until_complete(listen_task)
 
-        loop.create_task(self.log_forever())
+        # loop.create_task(self.log_forever())
         loop.create_task(self.serve_forever(address))
         # Running part
-        print('loop is running')
+        log('loop is running')
 
         try:
             loop.run_until_complete(asyncio.sleep(self.time_of_sample_size))
-            print("Test is complete")
-        except KeyboardInterrupt:
-            print("test got interrupted")
+            log("Test is complete")
+        except KeyboardInterrupt as error:
+            log("test got interrupted")
+            raise error
         finally:
             transport.close()
             self.shutdown()
 
-    def wait_for_probe(self):
-        self.server_socket.settimeout(self.socket_timeout)
-        print("Server ready at: %s %s" % self.listening_address)
-        request_and_address = self.server_socket.recvfrom(1024)
+    def save_entry(self, package: Package):
+        self.data_presenter.append(package)
 
-        address: Tuple[str, int] = request_and_address[1]
-        print(f"Request from {address[0]}{address[1]}")
-        return address
-
-    def ready_socket(self):
-        try:
-            # Assign IP address and port number to socket
-            self.server_socket.bind(self.listening_address)
-        except socket.error as error:
-            self.shutdown()
+    async def log_forever(self):
+        while True:
+            self.log()
+            await asyncio.sleep(self.log_interval)
 
     def log(self):
         one_second_in_the_past = datetime.now() - timedelta(seconds=2)
@@ -115,15 +132,10 @@ class Server:
         sent = self.data_presenter.get_time_table()[one_second_in_the_past].sent
         received = self.data_presenter.get_time_table()[one_second_in_the_past].received
 
-        print(f"{sent} packets sent last second |"
-              + f" {received} packets received last second ",
-              " | package loss: {:.2f}".format(packet_loss * 100),
-              end='\r')
-
-    async def log_forever(self):
-        while True:
-            self.log()
-            await asyncio.sleep(self.log_interval)
+        log(f"{sent} packets sent last second |"
+            + f" {received} packets received last second ",
+            " | package loss: {:.2f}".format(packet_loss * 100),
+            end='\r')
 
     async def serve_forever(self, address):
         start_time = time.time()
@@ -131,17 +143,6 @@ class Server:
             self.send_packet(address)
 
             await asyncio.sleep(self.__interval - (time.time() - start_time) % self.__interval)
-
-    def shutdown(self):
-        self.server_socket.close()
-
-        tasks = asyncio.Task.all_tasks()
-        for task in tasks:
-            task.cancel()
-
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(loop.shutdown_asyncgens())
-        loop.close()
 
     def calculate_packet_loss_in_pct(self, timestamp: datetime):
         time_entry = self.data_presenter.get_time_table()[timestamp]
@@ -153,12 +154,16 @@ class Server:
         else:
             return 1 - packages_recv / packages_sent
 
-    def timestamp(self):
-        return datetime.now()
+    def shutdown(self):
+        self.server_socket.close()
 
-    def ready_event_loop(self):
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+        tasks = asyncio.Task.all_tasks()
+        for task in tasks:
+            task.cancel()
+
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(loop.shutdown_asyncgens())
+        loop.close()
 
 
 class EchoServerProtocol(asyncio.DatagramProtocol):

@@ -72,3 +72,32 @@ class TestParser:
 
         with pytest.raises(SystemExit):
             self.parser.parse_args()
+
+    def test_have_speed_as_optianal_argument(self, mocker):
+        args('-s --speed 4mb', mocker)
+
+        parser = self.parser.parse_args()
+
+        byte = 1024
+        mb = byte * byte
+        four_mb = 4 * mb
+
+        assert parser.speed == four_mb
+
+    def test_speed_uses_number_if_chose_is_not_used(self, mocker):
+        args('-s --speed 1024', mocker)
+
+        parser = self.parser.parse_args()
+
+        assert parser.speed == 1024
+
+    def test_speed_uses_four_mb_as_default(self, mocker):
+        args('-s', mocker)
+
+        parser = self.parser.parse_args()
+
+        byte = 1024
+        mb = byte * byte
+        four_mb = 4 * mb
+
+        assert parser.speed == four_mb
