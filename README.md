@@ -25,6 +25,12 @@ To make a new release, go to github release, and draft a new release. A github a
 ### Demo with artificial packet loss
 |The demo is made for linux|
 | --- |
+First we install steinloss
+
+```
+pip3 install steinloss
+``
+
 To run a demo of the tool, we're setting up a virtual network on your machine using ip nets.
 We're making a network `n1` and `n2` by running
 ```
@@ -35,11 +41,11 @@ Now we would like to run the server on `n1` and the probe on `n2`
 This is done with the following commands in two different terminals:
 
 ```bash
-sudo ip netns exec ns1 bash -c "sudo -u $USER python3 steinloss py s"
+sudo ip netns exec ns1 bash -c "sudo -u $USER python3 -m steinloss -s"
 ```
 
 ```bash
-sudo ip netns exec ns2 bash -c "sudo -u $USER python3 steinloss py p"
+sudo ip netns exec ns2 bash -c "sudo -u $USER python3 -m steinloss -p -i 10.0.0.1"
 ```
 For example:
 
@@ -57,10 +63,13 @@ Now we can modify the packet loss by using the replace command. To set the packe
 ```bash
 sudo ip netns exec ns1 tc qdisc replace dev h1 root netem loss 20%
 ```
-
+#### Cleanup
 The virtual networks can be removed again with:
 ```bash
 sudo ip netns delete ns1 && sudo ip netns delete ns2
 ```
 
-
+And uninstall steinloss:
+```
+pip3 uninstall steinloss
+```
