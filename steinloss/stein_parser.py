@@ -88,10 +88,9 @@ class FrontEndAndBackEnd:
 
     def run(self):
         server = Server(**self.kwargs)
-
         t = Thread(target=server.run)
-        t.start()
-
-        dashboard.run()
-
-        t.join()
+        try:
+            t.start()
+            dashboard.run()
+        finally:
+            t.join()

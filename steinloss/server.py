@@ -50,11 +50,11 @@ class Server:
 
         try:
             address = self.wait_for_probe()
-            # try:
             self.run_loop(address)
         except Exception as e:
             log("Server timeout. Client didn't connect to server")
             log(e)
+            raise e
 
     def ready_event_loop(self):
         loop = asyncio.new_event_loop()
@@ -65,8 +65,9 @@ class Server:
             # Assign IP address and port number to socket
             self.server_socket.bind(self.listening_address)
         except socket.error as error:
-            log("socket could not connect to host", error)
+            log("socket could not connect to host")
             self.shutdown()
+            raise error
 
     def send_packet(self, address):
         packet = "%d" % self.id
@@ -108,8 +109,9 @@ class Server:
         try:
             loop.run_until_complete(asyncio.sleep(self.time_of_sample_size))
             log("Test is complete")
-        except KeyboardInterrupt:
+        except KeyboardInterrupt as error:
             log("test got interrupted")
+            raise error
         finally:
             transport.close()
             self.shutdown()
