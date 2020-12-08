@@ -5,4 +5,3 @@ __version__ = "0.1.11"
 
 def log(*str, **kwargs):
     print(*str, **kwargs)
-
