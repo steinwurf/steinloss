@@ -56,14 +56,6 @@ class Server:
             log("Server timeout. Client didn't connect to server")
             log(e)
 
-    def send_packet(self, address):
-        packet = "%d" % self.id
-
-        package = SentPackage(packet, self.timestamp())
-        self.save_entry(package)
-        self.id += 1
-        self.server_socket.sendto(packet.encode(), address)
-
     def ready_event_loop(self):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
@@ -73,7 +65,19 @@ class Server:
             # Assign IP address and port number to socket
             self.server_socket.bind(self.listening_address)
         except socket.error as error:
+            log("socket could not connect to host", error)
             self.shutdown()
+
+    def send_packet(self, address):
+        packet = "%d" % self.id
+
+        package = SentPackage(packet, self.timestamp())
+        self.save_entry(package)
+        self.id += 1
+        self.server_socket.sendto(packet.encode(), address)
+
+    def timestamp(self):
+        return datetime.now()
 
     def wait_for_probe(self):
         self.server_socket.settimeout(self.socket_timeout)
@@ -110,11 +114,13 @@ class Server:
             transport.close()
             self.shutdown()
 
-    def timestamp(self):
-        return datetime.now()
-
     def save_entry(self, package: Package):
         self.data_presenter.append(package)
+
+    async def log_forever(self):
+        while True:
+            self.log()
+            await asyncio.sleep(self.log_interval)
 
     def log(self):
         one_second_in_the_past = datetime.now() - timedelta(seconds=2)
@@ -129,17 +135,22 @@ class Server:
             " | package loss: {:.2f}".format(packet_loss * 100),
             end='\r')
 
-    async def log_forever(self):
-        while True:
-            self.log()
-            await asyncio.sleep(self.log_interval)
-
     async def serve_forever(self, address):
         start_time = time.time()
         while True:
             self.send_packet(address)
 
             await asyncio.sleep(self.__interval - (time.time() - start_time) % self.__interval)
+
+    def calculate_packet_loss_in_pct(self, timestamp: datetime):
+        time_entry = self.data_presenter.get_time_table()[timestamp]
+        packages_sent = time_entry.sent
+        packages_recv = time_entry.received
+
+        if packages_sent == 0 or packages_recv == 0:
+            return 0
+        else:
+            return 1 - packages_recv / packages_sent
 
     def shutdown(self):
         self.server_socket.close()
@@ -151,16 +162,6 @@ class Server:
         loop = asyncio.get_event_loop()
         loop.run_until_complete(loop.shutdown_asyncgens())
         loop.close()
-
-    def calculate_packet_loss_in_pct(self, timestamp: datetime):
-        time_entry = self.data_presenter.get_time_table()[timestamp]
-        packages_sent = time_entry.sent
-        packages_recv = time_entry.received
-
-        if packages_sent == 0 or packages_recv == 0:
-            return 0
-        else:
-            return 1 - packages_recv / packages_sent
 
 
 class EchoServerProtocol(asyncio.DatagramProtocol):
