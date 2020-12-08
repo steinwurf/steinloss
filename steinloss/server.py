@@ -1,10 +1,10 @@
 import asyncio
 import socket
+import time
 from datetime import datetime, timedelta
 from typing import Tuple
-import time
-from steinloss import log
 
+from steinloss import log
 from steinloss.Data_Presenter import Data_Presenter
 from steinloss.package import SentPackage, ReceivePackage, Package
 
@@ -18,7 +18,7 @@ gigabyte = 1048576 * kilobyte
 class Server:
     packet_size = kilobyte
 
-    def __init__(self, speed=megabyte * 100, ip='0.0.0.0', port=7070,
+    def __init__(self, speed=megabyte, ip='0.0.0.0', port=7070,
                  runtime_of_test=ONE_SECOND * 60 * 30):
         self.last_sent_packet = 0
         self.last_received_packet = 0
