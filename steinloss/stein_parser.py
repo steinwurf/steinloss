@@ -89,8 +89,8 @@ class FrontEndAndBackEnd:
             self.kwargs['ip'] = ip
 
     def run(self):
-        server = Server(**self.kwargs)
-        t = Thread(target=server.run)
+        udp_socket = Server(**self.kwargs)
+        t = Thread(target=udp_socket.run)
         try:
             t.start()
             dashboard.run()
