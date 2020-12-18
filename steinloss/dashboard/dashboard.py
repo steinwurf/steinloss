@@ -4,13 +4,15 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 import numpy
-import plotly
+import plotly.express as px
 from dash.dependencies import Input, Output
 from hurry.filesize import size, verbose
 
 from steinloss.Data_Presenter import Data_Presenter
 
-loss = 'loss'
+TIME = 'TIME'
+
+LOSS = 'loss'
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -55,8 +57,8 @@ def update_metrics(n):
               [Input('interval-component', 'n_intervals')])
 def update_graph_live(n):
     data = {
-        'time': [],
-        loss: [],
+        TIME: [],
+        LOSS: [],
     }
 
     # Collect some data
@@ -66,30 +68,22 @@ def update_graph_live(n):
 
     timestamp_array = numpy.array([base - timedelta(seconds=i) for i in range(1, 180)])
     for timestamp in timestamp_array:
-        data['time'].append(timestamp)
+        data[TIME].append(timestamp)
 
         loss_decimal = 0
         entry = time_table[timestamp]
         if entry.sent != 0:
             loss_decimal = entry.loss / time_table[timestamp].sent
         loss_pct = loss_decimal * 100
-        data[loss].append(loss_pct)
+        data[LOSS].append(loss_pct)
 
-    # Create the graph with subplots
-    fig = plotly.tools.make_subplots(rows=2, cols=1, vertical_spacing=0.2)
-    fig['layout']['margin'] = {
-        'l': 30, 'r': 10, 'b': 30, 't': 10
-    }
-    fig['layout']['legend'] = {'x': 0, 'y': 1, 'xanchor': 'left'}
-
-    fig.append_trace({
-        'x': data['time'],
-        'y': data[loss],
-        'name': loss,
-        'mode': 'lines+markers',
-        'type': 'scatter'
-    }, 1, 1)
-    return fig
+    # Create the graph
+    fig_2 = px.line(data, x=TIME, y=LOSS, title="Loss",
+                    labels={
+                        LOSS: 'package loss (%)',
+                        TIME: 'Timestamp'
+                    })
+    return fig_2
 
 
 def run():
