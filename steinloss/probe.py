@@ -1,11 +1,11 @@
-from socket import AF_INET, SOCK_DGRAM
 import socket
+from socket import AF_INET, SOCK_DGRAM
 
 
 class Probe:
     packet_size = 1024
 
-    def __init__(self, server_address, address=('', 7071)):
+    def __init__(self, server_address, port):
         self.window_size = 3
         self.lost = 0
         self.duplicate = 0
@@ -13,8 +13,8 @@ class Probe:
         self.sequence_number = None
         self.server_to_client_loss = 0
         self.suspect = [0] * 5
-        self.server_address = server_address
-        self.address = address
+        self.server_address = (server_address, port)
+        self.address = ('', port)
         self.id = 0
         self.sock = socket.socket(SOCK_DGRAM, AF_INET)
         self.sock.bind(self.address)
