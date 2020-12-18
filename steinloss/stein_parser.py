@@ -66,7 +66,7 @@ def task_factory(options):
     if options.server:
         return FrontEndAndBackEnd(options.ip_address, options.port, options.speed)
     elif options.probe:
-        return Probe((options.ip_address, options.port))
+        return Probe(options.ip_address, options.port)
     else:
         return None
 
