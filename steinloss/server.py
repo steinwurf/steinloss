@@ -82,7 +82,8 @@ class Server:
 
     def wait_for_probe(self):
         self.server_socket.settimeout(self.socket_timeout)
-        log("Server ready at: %s %s" % self.listening_address)
+        log("Server ready at: %-15s %s" % self.listening_address)
+        log("Server ready at: %-15s %s" % (self.get_local_ip(), self.listening_address[1]))
         log("Waiting for a probe to ping")
         request_and_address = self.server_socket.recvfrom(1024)
 
@@ -164,6 +165,18 @@ class Server:
         loop = asyncio.get_event_loop()
         loop.run_until_complete(loop.shutdown_asyncgens())
         loop.close()
+
+    def get_local_ip(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            # doesn't even have to be reachable
+            s.connect(('10.255.255.255', 1))
+            IP = s.getsockname()[0]
+        except Exception:
+            IP = '127.0.0.1'
+        finally:
+            s.close()
+        return IP
 
 
 class EchoServerProtocol(asyncio.DatagramProtocol):

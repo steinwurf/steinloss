@@ -1,4 +1,3 @@
-import random
 from datetime import datetime, timedelta
 
 import dash
@@ -10,13 +9,14 @@ from dash.dependencies import Input, Output
 from hurry.filesize import size, verbose
 
 from steinloss.Data_Presenter import Data_Presenter
-from steinloss.loss_calculator import TimeTable
 
 loss = 'loss'
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+server = app.server
+
 app.layout = html.Div(
     html.Div([
         html.H4('Steinloss: package loss'),
@@ -40,7 +40,7 @@ def update_metrics(n):
     data_presenter = Data_Presenter.get_instance()
     time_table = data_presenter.get_time_table()
 
-    timestamp = datetime.now() - timedelta(seconds=1)
+    timestamp = datetime.now() - timedelta(seconds=15)
     time_entry = time_table[timestamp]
 
     speed = size(time_entry.sent * 1024, system=verbose)
@@ -60,29 +60,19 @@ def update_graph_live(n):
     }
 
     # Collect some data
-    data_from_presenter = TimeTable()
-    time = datetime.now()
-    for x in range(0, 180):
-        delta = timedelta(seconds=x)
-        timestamp = time - delta
-
-        data_from_presenter[timestamp].sent = random.randint(90, 180)
-        data_from_presenter[timestamp].received = random.randint(1, 90)
-        data_from_presenter[timestamp].loss = data_from_presenter[timestamp].received / data_from_presenter[
-            timestamp].sent
-
     data_presenter = Data_Presenter.get_instance()
     time_table = data_presenter.get_time_table()
-    base = datetime.now()
+    base = datetime.now() - timedelta(seconds=30)  # 30 seconds behind
 
     timestamp_array = numpy.array([base - timedelta(seconds=i) for i in range(1, 180)])
-    for d in timestamp_array:
-        data['time'].append(d)
+    for timestamp in timestamp_array:
+        data['time'].append(timestamp)
 
-        loss_pct = 0
-        entry = time_table[d]
+        loss_decimal = 0
+        entry = time_table[timestamp]
         if entry.sent != 0:
-            loss_pct = entry.loss / time_table[d].sent
+            loss_decimal = entry.loss / time_table[timestamp].sent
+        loss_pct = loss_decimal * 100
         data[loss].append(loss_pct)
 
     # Create the graph with subplots
@@ -103,7 +93,7 @@ def update_graph_live(n):
 
 
 def run():
-    app.run_server(host='127.0.0.1', port=8050, debug=False)
+    app.run_server(host='0.0.0.0', port=8050)
 
 
 if __name__ == '__main__':
