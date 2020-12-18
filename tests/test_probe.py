@@ -89,3 +89,22 @@ class TestProbe:
         probe.consume_packet('6')
 
         assert probe.lost == 1
+
+    def test_loss_between_packets(self, mocker):
+        mocker.patch('socket.socket')
+        probe = Probe(('fake_address', 1337))
+
+        probe.consume_packet('0')
+        probe.consume_packet('1')
+        # missing 2
+        probe.consume_packet('3')
+        probe.consume_packet('4')
+        # [3,4,2]
+        # [1,1,0]
+        probe.consume_packet('7')
+        # får 7
+        # new_lower_bound = 5
+        # [6,7,5]
+        # [0,1,0]
+
+        assert probe.lost == 1
