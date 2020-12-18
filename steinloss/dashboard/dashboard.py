@@ -40,7 +40,7 @@ def update_metrics(n):
     data_presenter = Data_Presenter.get_instance()
     time_table = data_presenter.get_time_table()
 
-    timestamp = datetime.now() - timedelta(seconds=1)
+    timestamp = datetime.now() - timedelta(seconds=15)
     time_entry = time_table[timestamp]
 
     speed = size(time_entry.sent * 1024, system=verbose)
