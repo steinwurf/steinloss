@@ -1,5 +1,5 @@
-from socket import AF_INET, SOCK_DGRAM
 import socket
+from socket import AF_INET, SOCK_DGRAM
 
 
 class Probe:
@@ -10,9 +10,9 @@ class Probe:
         self.lost = 0
         self.duplicate = 0
         self.reorder = 0
-        self.sequence_number = None
+        self.sequence_number = 0
         self.server_to_client_loss = 0
-        self.suspect = [0] * 5
+        self.suspect = [1] * self.window_size
         self.server_address = server_address
         self.address = address
         self.id = 0
@@ -65,51 +65,106 @@ class Probe:
             self.receive_packet()
 
     def consume_packet(self, packet):
-        full_window = self.window_size + 2
+        window_size = 3
         packet = int(packet)
-        pos = packet % full_window
 
-        if self.sequence_number is None:
-            self.sequence_number = packet - 1
+        # >>>>> 0
+        # [0,1,2]
+        # [1,1,1]
+        # hvis packet - 2 mod 3 er 0 så har vi packet loss
+        # 0 - 2 mod 3 = 1
+        # [0,1,2]
+        # [1,0,1]
+        # hvis packet - 2 mod 3 er 0 så har vi packet loss
+        # 1 - 2 mod 3 = 2
+        # >>>>> 1
+        # [0,1,2]
+        # [1,0,1]
 
-        if packet > self.sequence_number:  # det er en ny pakke
-            # Move window forward from 2 being middle, to 3 being middle
-            # [0,1,2,3,4]
-            # [0,0,0,1,1]
+        # [0,1,2]
+        # [1,1,1]
 
-            # [5,1,2,3,4]
-            # [1,0,0,0,1]
+        # >>>>> 2
+        # [3,1,2]
+        # [0,1,0]
 
-            # kun kig på det her, hvis vi er hoppet two tal
-            two_up = (pos - 2) % 5
-            if self.suspect[two_up] == 1:
+        # [3,4,2]
+        # [0,0,1]
+
+        # så hvis vi bare får det næste tal,
+
+        if packet < self.sequence_number - 2:
+            # Er allerede talt som packet loss
+            # ikke gør noget
+            pass
+        # same
+        if packet == self.sequence_number - 2:
+            # indenfor reorder
+            # vend plads til 1
+            my_pos = packet % window_size
+            self.suspect[my_pos] = 1
+            pass
+        if packet == self.sequence_number - 1:
+            # indenfor reorder
+            # vend plads til 1
+            my_pos = packet % window_size
+            self.suspect[my_pos] = 1
+            pass
+        if packet == self.sequence_number - 0:  # duplicate
+            # duplication ?
+            # ikke gør noget
+            pass
+        if packet == self.sequence_number + 1:
+            # hvis det tal jeg skal til at sætte til 1, er 0. Så packet loss
+            # har ikke fået 2
+            # [3,4,2]
+            # [1,1,0]
+            # får 5
+
+            # [3,4,5]
+            # [1,1,1]
+            # +1 loss
+            my_pos = packet % window_size
+            if self.suspect[my_pos] == 0:
                 self.lost += 1
-            self.suspect[two_up] = 1
+            self.suspect[my_pos] = 1
 
-            if packet > (self.sequence_number + 1):
-                one_up = (pos - 1) % 5
-                if self.suspect[one_up] == 1:
-                    self.lost += 1
-                self.suspect[one_up] = 1
+        if packet == self.sequence_number + 2:
+            # hvis det tal jeg skal til at sætte til 1, er 0. Så packet loss
+            # hvis det tallet bag min position          er 0. Så packet loss
 
-            # set my pos to found
-            self.suspect[pos] = 0  # no loss
+            # har ikke fået 2
+            # [3,4,2]
+            # [1,1,0]
+            # får 6
+
+            # [6,4,5]
+            # [1,1,0]
+            # +1 loss
+            # venter stadig på at få 5
+            my_pos = packet % window_size
+            if self.suspect[my_pos] == 0:
+                self.lost += 1
+            self.suspect[my_pos] = 1
+
+            behind_me_pos = (packet - 1) % window_size
+            if self.suspect[behind_me_pos] == 0:
+                self.lost += 1
+            self.suspect[behind_me_pos] = 0
+
             pass
 
-        if packet == self.sequence_number:
-            # duplication
+        if packet > self.sequence_number + 2:
+            packet_out_of_reorder_window = packet - self.window_size
+            loss_we_know = packet_out_of_reorder_window - self.sequence_number
+            self.lost += loss_we_know
+
+            self.suspect = [0, 0, 0]
+            my_pos = packet % window_size
+            self.suspect[my_pos] = 1
+
+            # tæl packet loss fra seneste sequence number til packet number minus 2
+            # sæt array til 0
             pass
-        if packet < self.sequence_number:
-            # is it in reordering window?
-            if packet < self.sequence_number - self.window_size:
-                # it is an old package.
-                # The loss of this package is already counted
-                pass
-            else:
-                # in reordering window
-                # Tell that one of the packages in the reordering window is found
-                self.suspect[pos] = 0
-                # update my pos to found
-                pass
 
         self.sequence_number = max(packet, self.sequence_number)

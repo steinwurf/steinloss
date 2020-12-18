@@ -20,17 +20,6 @@ class TestProbe:
 
         probe.sock.sendto.assert_called_once_with('1_0'.encode(), probe.server_address)
 
-    def test_is_packet_loss_should_detect_loss_when_the_next_id_is_more_than_three_numbers_higere(self, mocker):
-        mocker.patch('socket.socket')
-        probe = Probe(('fake_address', 1337))
-
-        probe.consume_packet('0')
-        probe.consume_packet('4')
-        # lost package 1
-        # package 2,3 is still in reordering window
-
-        assert probe.lost == 1
-
     def test_iterate_through_window_twice_without_loss(self, mocker):
         mocker.patch('socket.socket')
         probe = Probe(('fake_address', 1337))
@@ -40,6 +29,17 @@ class TestProbe:
             probe.consume_packet(str(n))
 
         assert probe.lost == 0
+
+    def test_count_loss_when_out_of_reorder_window(self, mocker):
+        mocker.patch('socket.socket')
+        probe = Probe(('fake_address', 1337))
+
+        probe.consume_packet('0')
+        probe.consume_packet('5')
+
+        # lost package 1,2
+        # package 3,4 is still in reordering window
+        assert probe.lost == 2
 
     def test_is_packet_loss_should_handle_reordering(self, mocker):
         mocker.patch('socket.socket')
@@ -51,7 +51,19 @@ class TestProbe:
 
         assert probe.lost == 0
 
-    def test_is_packet_loss_should_handle_reordering_down_to_three(self, mocker):
+    def test_no_packet_loss_inside_window(self, mocker):
+        mocker.patch('socket.socket')
+        probe = Probe(('fake_address', 1337))
+
+        probe.consume_packet('0')
+        probe.consume_packet('2')
+        probe.consume_packet('3')
+        probe.consume_packet('1')
+        probe.consume_packet('4')
+
+        assert probe.lost == 0
+
+    def test_package_outside_reorder_window_do_not_get_counted(self, mocker):
         mocker.patch('socket.socket')
         probe = Probe(('fake_address', 1337))
 
@@ -65,15 +77,6 @@ class TestProbe:
 
         assert probe.lost == 1
 
-    def test_no_packet_loss_inside_window(self, mocker):
-        mocker.patch('socket.socket')
-        probe = Probe(('fake_address', 1337))
-
-        probe.consume_packet('1')
-        probe.consume_packet('2')
-
-        assert probe.lost == 0
-
     def test_detect_loss(self, mocker):
         mocker.patch('socket.socket')
         probe = Probe(('fake_address', 1337))
@@ -83,7 +86,6 @@ class TestProbe:
         probe.consume_packet('2')
         probe.consume_packet('4')
         probe.consume_packet('5')
+        probe.consume_packet('6')
 
         assert probe.lost == 1
-
-# test sequence number start at first package
