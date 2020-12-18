@@ -205,4 +205,4 @@ class ReorderWindow:
 
     @property
     def get_loss(self):
-        self.loss
+        return self.loss
