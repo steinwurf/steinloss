@@ -1,5 +1,4 @@
 from argparse import ArgumentParser
-import pytest
 from steinloss.stein_parser import setup
 
 
