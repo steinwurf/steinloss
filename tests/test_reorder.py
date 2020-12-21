@@ -11,6 +11,16 @@ class TestReorder:
 
         assert reorder.lost == 0
 
+    def test_count_duplicates(self):
+        reorder = Reorder()
+
+        reorder.consume_packet('0')
+        reorder.consume_packet('0')
+
+        # lost package 1,2
+        # package 3,4 is still in reordering window
+        assert reorder.duplicate == 1
+
     def test_count_loss_when_out_of_reorder_window(self):
         reorder = Reorder()
 

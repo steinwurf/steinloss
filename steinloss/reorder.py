@@ -7,35 +7,20 @@ class Reorder:
         self.window_size = window_size
         self.max_sequence_number = -1
 
+    @property
+    def lower_bound(self):
+        return self.max_sequence_number - self.window_size
+
     def consume_packet(self, incoming_seq_num: str):
         incoming_seq_num = int(incoming_seq_num)
 
-        if incoming_seq_num == self.max_sequence_number - 2:
-            # indenfor reorder
-            # vend plads til 1
-            my_pos = incoming_seq_num % self.window_size
-            self.reorder_window[my_pos] = 1
-
-        if incoming_seq_num == self.max_sequence_number - 1:
-            # indenfor reorder
-            # vend plads til 1
-            my_pos = incoming_seq_num % self.window_size
-            self.reorder_window[my_pos] = 1
+        if self.lower_bound < incoming_seq_num < self.max_sequence_number:
+            self.recived_packet(incoming_seq_num)
 
         if incoming_seq_num == self.max_sequence_number - 0:  # duplicate
-            # duplication ?
-            # ikke gør noget
-            pass
-        if incoming_seq_num == self.max_sequence_number + 1:
-            # hvis det tal jeg skal til at sætte til 1, er 0. Så packet loss
-            # har ikke fået 2
-            # [3,4,2]
-            # [1,1,0]
-            # får 5
+            self.duplicate += 1
 
-            # [3,4,5]
-            # [1,1,1]
-            # +1 loss
+        if incoming_seq_num == self.max_sequence_number + 1:
             my_pos = incoming_seq_num % self.window_size
             if self.reorder_window[my_pos] == 0:
                 self.lost += 1
@@ -90,14 +75,17 @@ class Reorder:
             self.lost += new_lower_bound - old_upper_bound
 
             self.reorder_window = [0, 0, 0]
-            my_pos = incoming_seq_num % self.window_size
-            self.reorder_window[my_pos] = 1
+            self.recived_packet(incoming_seq_num)
 
             # tæl packet loss fra seneste sequence number til packet number minus 2
             # sæt array til 0
             pass
 
         self.max_sequence_number = max(incoming_seq_num, self.max_sequence_number)
+
+    def recived_packet(self, incoming_seq_num):
+        my_pos = incoming_seq_num % self.window_size
+        self.reorder_window[my_pos] = 1
 
     def get_bits(self, lower_bound, upper_bound):
 
