@@ -40,7 +40,7 @@ class TestReorder:
         # package 3,4 is still in reordering window
         assert reorder.lost == 3
 
-    def test_is_packet_loss_should_handle_reordering(self, mocker):
+    def test_is_packet_loss_should_handle_reordering(self):
         reorder = Reorder()
 
         reorder.consume_packet('0')

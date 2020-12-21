@@ -20,34 +20,25 @@ class Reorder:
         if incoming_seq_num == self.max_sequence_number - 0:  # duplicate
             self.duplicate += 1
 
+        # if self.max_sequence_number < incoming_seq_num < self.max_sequence_number + 2:
+        #     self.handle_loss(incoming_seq_num)
+        #     self.recived_packet(incoming_seq_num)
+        #
+        #     for n in range(self.max_sequence_number + 1, incoming_seq_num):
+        #         self.handle_loss(incoming_seq_num - n)
+        #         self.not_received_package(incoming_seq_num - n)
+
         if incoming_seq_num == self.max_sequence_number + 1:
-            my_pos = incoming_seq_num % self.window_size
-            if self.reorder_window[my_pos] == 0:
-                self.lost += 1
-            self.reorder_window[my_pos] = 1
+            self.handle_loss(incoming_seq_num)
+            self.recived_packet(incoming_seq_num)
 
         if incoming_seq_num == self.max_sequence_number + 2:
-            # hvis det tal jeg skal til at sætte til 1, er 0. Så packet loss
-            # hvis det tallet bag min position          er 0. Så packet loss
+            self.handle_loss(incoming_seq_num)
+            self.recived_packet(incoming_seq_num)
 
-            # har ikke fået 2
-            # [3,4,2]
-            # [1,1,0]
-            # får 6
-
-            # [6,4,5]
-            # [1,1,0]
-            # +1 loss
-            # venter stadig på at få 5
-            my_pos = incoming_seq_num % self.window_size
-            if self.reorder_window[my_pos] == 0:
-                self.lost += 1
-            self.reorder_window[my_pos] = 1
-
-            behind_me_pos = (incoming_seq_num - 1) % self.window_size
-            if self.reorder_window[behind_me_pos] == 0:
-                self.lost += 1
-            self.reorder_window[behind_me_pos] = 0
+            for n in range(self.max_sequence_number + 1, incoming_seq_num):
+                self.handle_loss(incoming_seq_num - n)
+                self.not_received_package(incoming_seq_num - n)
 
         if incoming_seq_num > self.max_sequence_number + 2:
             # husk at tælle gamle fået pakker
@@ -83,6 +74,12 @@ class Reorder:
 
         self.max_sequence_number = max(incoming_seq_num, self.max_sequence_number)
 
+    def handle_loss(self, incoming_seq_num):
+        my_pos = incoming_seq_num % self.window_size
+        print(my_pos)
+        if self.reorder_window[my_pos] == 0:
+            self.lost += 1
+
     def recived_packet(self, incoming_seq_num):
         my_pos = incoming_seq_num % self.window_size
         self.reorder_window[my_pos] = 1
@@ -99,3 +96,7 @@ class Reorder:
             position = n % self.window_size
             arr.append(position)
         return arr
+
+    def not_received_package(self, incoming_seq_num):
+        my_pos = incoming_seq_num % self.window_size
+        self.reorder_window[my_pos] = 0
