@@ -3,8 +3,8 @@ class Reorder:
         self.lost = 0
         self.duplicate = 0
         # Sat to one, as the implementation would count packet number -2 and -1 as loss otherwise.
-        self.reorder_window = self.reset_reorder_window(1)
         self.window_size = window_size
+        self.reorder_window = self.reset_reorder_window(1)
         self.sequence_number = -1
 
     @property
