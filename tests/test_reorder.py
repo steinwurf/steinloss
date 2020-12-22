@@ -49,7 +49,7 @@ class TestReorder:
 
         assert reorder.lost == 0
 
-    def test_no_packet_loss_inside_window(self, mocker):
+    def test_no_packet_loss_inside_window(self):
         probe = Reorder()
 
         probe.consume_packet('0')
@@ -102,51 +102,3 @@ class TestReorder:
         # [0,1,0]
 
         assert probe.lost == 1
-
-    def test_get_bits_gives_empty_array_if_the_bound_is_the_same(self):
-        reorder = Reorder()
-
-        bit_array = reorder.get_bits(0, 0)
-        values_of_array = set(bit_array)
-
-        assert values_of_array == set()
-
-    def test_get_bits_gives_gives_lower_bound_pos(self):
-        reorder = Reorder()
-
-        bit_array = reorder.get_bits(0, 1)
-        values_of_array = set(bit_array)
-
-        assert values_of_array == {0}
-
-    def test_get_bits_gives_gives_lower_bound_pos2(self):
-        reorder = Reorder()
-
-        bit_array = reorder.get_bits(0, 2)
-        values_of_array = set(bit_array)
-
-        assert values_of_array == {0, 1}
-
-    def test_get_bits_gives_gives_lower_bound_pos3(self):
-        reorder = Reorder()
-
-        bit_array = reorder.get_bits(0, 3)
-        values_of_array = set(bit_array)
-
-        assert values_of_array == {0, 1, 2}
-
-    def test_get_bits_gives_gives_lower_bound_pos_1(self):
-        reorder = Reorder()
-
-        bit_array = reorder.get_bits(0, 10)
-        values_of_array = set(bit_array)
-
-        assert values_of_array == {0, 1, 2}
-
-    def test_get_bits_gives_gives_lower_bound_pos_5(self):
-        reorder = Reorder()
-
-        bit_array = reorder.get_bits(5, 7)
-        values_of_array = set(bit_array)
-
-        assert values_of_array == {2, 0}
