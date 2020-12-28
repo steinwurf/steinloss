@@ -21,21 +21,20 @@ class Reorder:
             self.duplicate += 1
 
         elif self.sequence_number < incoming_seq_num < self.sequence_number + self.window_size:
-            self.handle_loss(incoming_seq_num)
+            self.check_loss(incoming_seq_num)
             self.received_packet(incoming_seq_num)
 
             for n in range(self.sequence_number + 1, incoming_seq_num):
-                self.handle_loss(incoming_seq_num - n)
+                self.check_loss(incoming_seq_num - n)
                 self.received_packet(incoming_seq_num - n, False)
 
         elif incoming_seq_num >= self.sequence_number + self.window_size:
-            self.received_packet(incoming_seq_num)
-
             for n in range(self.lower_bound, self.sequence_number):
-                self.handle_loss(n)
+                self.check_loss(n)
             self.reorder_window = self.reset_reorder_window(0)
 
             self.lost += self.loss_upto_new_bound(incoming_seq_num)
+            self.received_packet(incoming_seq_num)
 
         self.sequence_number = max(incoming_seq_num, self.sequence_number)
 
@@ -45,7 +44,7 @@ class Reorder:
     def loss_upto_new_bound(self, incoming_seq_num):
         return incoming_seq_num - self.window_size - self.sequence_number
 
-    def handle_loss(self, incoming_seq_num):
+    def check_loss(self, incoming_seq_num):
         my_pos = incoming_seq_num % self.window_size
         print(my_pos)
         if self.reorder_window[my_pos] == 0:
