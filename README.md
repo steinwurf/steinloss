@@ -29,7 +29,7 @@ First we install steinloss
 
 ```
 pip3 install steinloss
-``
+```
 
 To run a demo of the tool, we're setting up a virtual network on your machine using ip nets.
 We're making a network `n1` and `n2` by running
