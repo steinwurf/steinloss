@@ -8,14 +8,18 @@ from steinloss.dashboard import dashboard
 from steinloss.probe import Probe
 from steinloss.server import Server
 
-byte = 1024
-mb = byte * byte
+kilobyte = 1024
+mb = kilobyte * kilobyte
 
 
 class SpeedConverter(Action):
     def __init__(self, option_strings, dest, **kwargs):
         super().__init__(option_strings, dest, **kwargs)
         self.speeds = {
+            '3mbps': mb * 3 / 8,
+            '5mbps': mb * 5 / 8,
+            '25mbps': mb * 25 / 8,
+            '512kb': 512 * kilobyte,
             '4mb': 4 * mb,
             '8mb': 8 * mb,
             '16mb': 16 * mb
@@ -27,7 +31,7 @@ class SpeedConverter(Action):
         if values not in self.speeds.keys():
             speed = int(values)
         elif values is None:
-            speed = self.speeds['4mb']
+            speed = self.speeds['512kb']
         else:
             speed = self.speeds[values]
 
