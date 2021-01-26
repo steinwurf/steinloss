@@ -1,25 +1,30 @@
+import urllib.parse
+
 from datetime import datetime, timedelta
 
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
+
 import numpy
 import plotly.express as px
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
+from dash.exceptions import PreventUpdate
 from hurry.filesize import size, verbose
-
+import pandas as pd
 from steinloss.Data_Presenter import Data_Presenter
 
 TIME = 'TIME'
 
 LOSS = 'loss'
+LOSS_COUNT = 'loss-count'
 
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+external_stylesheets = ['https://stackpath.bootstrapcdn.com/bootswatch/4.5.2/flatly/bootstrap.min.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 server = app.server
 
-app.layout = html.Div(
+app.layout = html.Div([
     html.Div([
         html.H4('Steinloss: package loss'),
         html.Div(id='live-update-text'),
@@ -29,8 +34,14 @@ app.layout = html.Div(
             interval=5 * 1000,  # in milliseconds
             n_intervals=0
         )
-    ])
-)
+    ]),
+
+    html.Div(id='save-data',
+             children=[
+                 html.Button("download data", id='save-data-btn', n_clicks=0),
+                 html.Ul(id='file-list', children=[])
+             ]),
+])
 
 start = datetime.now()
 
@@ -59,6 +70,7 @@ def update_graph_live(n):
     data = {
         TIME: [],
         LOSS: [],
+        LOSS_COUNT: []
     }
 
     # Collect some data
@@ -73,17 +85,47 @@ def update_graph_live(n):
         loss_decimal = 0
         entry = time_table[timestamp]
         if entry.sent != 0:
-            loss_decimal = entry.loss / time_table[timestamp].sent
+            loss_decimal = entry.loss / entry.sent
         loss_pct = loss_decimal * 100
         data[LOSS].append(loss_pct)
 
+        data[LOSS_COUNT].append(f' {entry.loss}/{entry.sent}')
+
     # Create the graph
-    fig_2 = px.line(data, x=TIME, y=LOSS, title="Loss",
+    fig_2 = px.line(data, x=TIME, y=LOSS, title="Loss", color=LOSS_COUNT,
                     labels={
-                        LOSS: 'package loss (%)',
-                        TIME: 'Timestamp'
+                        LOSS: 'Package loss (%) ',
+                        TIME: 'Timestamp ',
+                        LOSS_COUNT: 'Lost/Sent '
                     })
     return fig_2
+
+
+@app.callback(Output('file-list', 'children'),
+              [Input('save-data-btn', 'n_clicks')],
+              [State('file-list', 'children')])
+def save_data(n_clicks, old_output):
+    if n_clicks == 0:
+        raise PreventUpdate
+
+    data_presenter = Data_Presenter.get_instance()
+    packet_table = data_presenter.get_packet_table()
+    dataframe = pd.DataFrame(data=packet_table, columns=['sent_at', 'received_at'])
+
+    csv_string = dataframe.to_csv(index=False, encoding='utf-8')
+    csv_string = "data:text/csv;charset=utf-8," + urllib.parse.quote(csv_string)
+
+    file_name = f'loss_data_{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}.csv'
+    download_link = html.A(
+        file_name,
+        id='download-link',
+        download=file_name + ".csv",
+        href=csv_string,
+        target="_blank"
+    )
+
+    list_item = html.Li(download_link)
+    return old_output + [list_item]
 
 
 def run():
