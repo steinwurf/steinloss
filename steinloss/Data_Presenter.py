@@ -34,3 +34,6 @@ class Data_Presenter(object):
 
     def get_time_table(self) -> TimeTable:
         return self.data.time_table
+
+    def get_packet_table(self):
+        return self.data.packet_table
