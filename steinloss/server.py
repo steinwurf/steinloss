@@ -4,9 +4,13 @@ import time
 from datetime import datetime, timedelta
 from typing import Tuple
 
-from steinloss import log
+""" from steinloss import log
 from steinloss.Data_Presenter import Data_Presenter
 from steinloss.package import SentPackage, ReceivePackage, Package
+ """
+
+from Data_Presenter import Data_Presenter
+from package import SentPackage, ReceivePackage, Package
 
 ONE_SECOND = 1
 
@@ -32,6 +36,8 @@ class Server:
         self.speed = speed
         self.data_presenter = Data_Presenter.get_instance()
 
+        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
     @property
     def speed(self):
         return 1 / self.__interval * self.packet_size
@@ -52,8 +58,8 @@ class Server:
             address = self.wait_for_probe()
             self.run_loop(address)
         except Exception as e:
-            log("Server timeout. Client didn't connect to server")
-            log(e)
+            #log("Server timeout. Client didn't connect to server")
+            #log(e)
             raise e
 
     def ready_event_loop(self):
@@ -65,7 +71,7 @@ class Server:
             # Assign IP address and port number to socket
             self.server_socket.bind(self.listening_address)
         except socket.error as error:
-            log("socket could not connect to host")
+            #log("socket could not connect to host")
             self.shutdown()
             raise error
 
@@ -82,13 +88,13 @@ class Server:
 
     def wait_for_probe(self):
         self.server_socket.settimeout(self.socket_timeout)
-        log("Server ready at: %-15s %s" % self.listening_address)
-        log("Server ready at: %-15s %s" % (self.get_local_ip(), self.listening_address[1]))
-        log("Waiting for a probe to ping")
+        #log("Server ready at: %-15s %s" % self.listening_address)
+        #log("Server ready at: %-15s %s" % (self.get_local_ip(), self.listening_address[1]))
+        #log("Waiting for a probe to ping")
         request_and_address = self.server_socket.recvfrom(1024)
 
         address: Tuple[str, int] = request_and_address[1]
-        log(f"Request from {address[0]}{address[1]}")
+        #log(f"Request from {address[0]}{address[1]}")
         return address
 
     def run_loop(self, address):
@@ -105,13 +111,13 @@ class Server:
         # loop.create_task(self.log_forever())
         loop.create_task(self.serve_forever(address))
         # Running part
-        log('loop is running')
+        #log('loop is running')
 
         try:
             loop.run_until_complete(asyncio.sleep(self.time_of_sample_size))
-            log("Test is complete")
+            #log("Test is complete")
         except KeyboardInterrupt as error:
-            log("test got interrupted")
+            #log("test got interrupted")
             raise error
         finally:
             transport.close()
@@ -133,10 +139,10 @@ class Server:
         sent = self.data_presenter.get_time_table()[one_second_in_the_past].sent
         received = self.data_presenter.get_time_table()[one_second_in_the_past].received
 
-        log(f"{sent} packets sent last second |"
-            + f" {received} packets received last second ",
-            " | package loss: {:.2f}".format(packet_loss * 100),
-            end='\r')
+        #log(f"{sent} packets sent last second |"
+        #    + f" {received} packets received last second ",
+        #    " | package loss: {:.2f}".format(packet_loss * 100),
+        #    end='\r')
 
     async def serve_forever(self, address):
         start_time = time.time()

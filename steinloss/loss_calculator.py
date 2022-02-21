@@ -1,7 +1,8 @@
 from datetime import datetime
 
-from steinloss.package import Package, ReceivePackage, SentPackage
-
+""" from steinloss.package import Package, ReceivePackage, SentPackage
+ """
+from package import Package, ReceivePackage, SentPackage
 
 class TimeEntry:
     def __init__(self):

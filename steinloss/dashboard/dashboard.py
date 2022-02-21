@@ -1,21 +1,22 @@
 import urllib.parse
 from copy import copy
-
 from datetime import datetime, timedelta
 
 import dash
+import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
-
 import numpy
+import pandas as pd
 import plotly.express as px
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 from hurry.filesize import size, verbose
-import pandas as pd
 
-from steinloss import log
-from steinloss.Data_Presenter import Data_Presenter
+""" from steinloss import log
+from steinloss.Data_Presenter import Data_Presenter """
+
+from Data_Presenter import Data_Presenter
 
 TIME = 'TIME'
 
@@ -32,7 +33,7 @@ app.layout = html.Div([
     html.Div([
         html.H4('Steinloss: package loss'),
         html.Div(id='live-update-text'),
-        dcc.Graph(id='live-update-graph'),
+        dcc.Graph(id='lost-percent-graph'),
         dcc.Graph(id='lost-sent-graph'),
         dcc.Interval(
             id='interval-component',
@@ -41,11 +42,7 @@ app.layout = html.Div([
         )
     ]),
 
-    html.Div(id='save-data',
-             children=[
-                 html.Button("download data", id='save-data-btn', n_clicks=0),
-                 html.Ul(id='file-list', children=[])
-             ]),
+    html.Div([dbc.Button(id='download_button', children=['Download data']), dcc.Download(id='download_component')]),
 ])
 
 start = datetime.now()
@@ -69,7 +66,7 @@ def update_metrics(n):
 
 
 # Multiple components can update everytime interval gets fired.
-@app.callback(Output('live-update-graph', 'figure'),
+@app.callback(Output('lost-percent-graph', 'figure'),
               [Input('interval-component', 'n_intervals')])
 def update_graph_live(n):
     data = {
@@ -93,13 +90,14 @@ def update_graph_live(n):
         loss_pct = loss_decimal * 100
         data[LOSS].append(loss_pct)
 
+    df = pd.DataFrame.from_dict(data)
     # Create the graph
-    fig_2 = px.line(data, x=TIME, y=LOSS, title="Loss",
+    fig = px.line(df, x=TIME, y=LOSS, title="Loss",
                     labels={
                         LOSS: 'Package loss (%) ',
                         TIME: 'Timestamp ',
                     })
-    return fig_2
+    return fig
 
 
 @app.callback(Output('lost-sent-graph', 'figure'),
@@ -128,59 +126,46 @@ def update_sent_lost(n):
         data[PACKET_COUNT].append(entry.sent)
         data[PACKET_TYPE].append('sent')
 
+    df = pd.DataFrame.from_dict(data)
+
+
     # Create the graph
-    fig_2 = px.line(data, x=TIME, y=PACKET_COUNT, title="Sent/Received", color=PACKET_TYPE,
+    fig = px.line(df, x=TIME, y=PACKET_COUNT, title="Sent/Received", color=PACKET_TYPE,
                     labels={
                         PACKET_COUNT: 'Packets: ',
                         TIME: 'Timestamp ',
                         PACKET_TYPE: 'Type: '
                     })
-    return fig_2
+    return fig
 
+@app.callback(Output('download_component', 'data'),
+              Input('download_button', 'n_clicks'),
+              prevent_initial_call=True)
+def download_data(n_clicks):
+    data = {
+        TIME: [],
+        LOSS: [],
+    }
 
-def prep_data(packet_table):
-    packet_table = copy(packet_table)
-    return map(lambda entry: [packet_table[entry].sent_at.strftime("%Y-%m-%d_%H:%M:%S"),
-                              packet_table[entry].received_at.strftime("%Y-%m-%d_%H:%M:%S") if packet_table[
-                                  entry].received_at else '']
-               , packet_table)
-
-
-@app.callback(Output('file-list', 'children'),
-              [Input('save-data-btn', 'n_clicks')],
-              [State('file-list', 'children')])
-def save_data(n_clicks, old_output):
-    if n_clicks == 0 or n_clicks == 1:
-        raise PreventUpdate
-
+    # Collect some data
     data_presenter = Data_Presenter.get_instance()
-    packet_table = data_presenter.get_packet_table()
-    dataframe = pd.DataFrame(columns=['sent_at', 'received_at'])
-    try:
-        for x in [['a', 'b']]:  # prep_data(packet_table):
-            dataframe.append({'sent_at': x[0], 'received_at': x[1]}, ignore_index=True)
+    time_table = data_presenter.get_time_table()
+    base = datetime.now() - timedelta(seconds=30)  # 30 seconds behind
 
-        csv_string = dataframe.to_csv(index=False,
-                                      encoding='utf-8')
+    timestamp_array = numpy.array([base - timedelta(seconds=i) for i in range(1, 180)])
+    for timestamp in timestamp_array:
+        data[TIME].append(timestamp)
 
-        csv_string = "data:text/csv;charset=utf-8," + urllib.parse.quote(csv_string)
+        loss_decimal = 0
+        entry = time_table[timestamp]
+        if entry.sent != 0:
+            loss_decimal = entry.loss / entry.sent
+        loss_pct = loss_decimal * 100
+        data[LOSS].append(loss_pct)
 
-        file_name = f'loss_data_{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}.csv'
-        download_link = html.A(
-            file_name,
-            id='download-link',
-            download=file_name + ".csv",
-            href=csv_string,
-            target="_blank"
-        )
-    except RuntimeError as e:
-        log(e)
-        download_link = html.P('The test is not finished yet. Wait for the test to finish')
+    df = pd.DataFrame.from_dict(data)
 
-    list_item = html.Li(download_link)
-
-    return old_output + [list_item]
-
+    return dcc.send_data_frame(df.to_csv, "package_data.csv")
 
 def run():
     app.run_server(host='0.0.0.0', port=8050)
