@@ -2,13 +2,7 @@
 
 name: Lint and test
 
-on:
-  pull_request:
-    branches:
-      - master
-  push:
-    branches: 
-      - master
+on: push
 
 jobs:
   test_and_lint:
