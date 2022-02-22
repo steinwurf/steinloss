@@ -142,8 +142,8 @@ def prep_data(packet_table):
     packet_table = copy(packet_table)
     return map(lambda entry: [packet_table[entry].sent_at.strftime("%Y-%m-%d_%H:%M:%S"),
                               packet_table[entry].received_at.strftime("%Y-%m-%d_%H:%M:%S") if packet_table[
-                                  entry].received_at else '']
-               , packet_table)
+                                  entry].received_at else ''], 
+                                packet_table)
 
 
 @app.callback(Output('file-list', 'children'),
