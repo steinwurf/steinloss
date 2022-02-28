@@ -37,6 +37,7 @@ class Server:
         self.speed = speed
         self.data_presenter = Data_Presenter.get_instance()
 
+        #making the port and host reusable:
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     @property
@@ -140,10 +141,10 @@ class Server:
         sent = self.data_presenter.get_time_table()[one_second_in_the_past].sent
         received = self.data_presenter.get_time_table()[one_second_in_the_past].received
 
-        #log(f"{sent} packets sent last second |"
-        #    + f" {received} packets received last second ",
-        #    " | package loss: {:.2f}".format(packet_loss * 100),
-        #    end='\r')
+        log(f"{sent} packets sent last second |"
+            + f" {received} packets received last second ",
+            " | package loss: {:.2f}".format(packet_loss * 100),
+            end='\r')
 
     async def serve_forever(self, address):
         start_time = time.time()
@@ -203,3 +204,6 @@ class EchoServerProtocol(asyncio.DatagramProtocol):
 
         package = ReceivePackage(sent_packet, received_packet, datetime.now())
         self.server.data_presenter.append(package)
+
+
+

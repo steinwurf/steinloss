@@ -12,6 +12,7 @@ __version__ = "0.3.6"
 from dashboard import dashboard
 from probe import Probe
 from server import Server
+from utilities import log
 
 kilobyte = 1024
 mb = kilobyte * kilobyte
