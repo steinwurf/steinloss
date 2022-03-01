@@ -2,7 +2,7 @@ from datetime import datetime
 
 """ from steinloss.package import Package, ReceivePackage, SentPackage
  """
-from package import Package, ReceivePackage, SentPackage
+from Package import Package, ReceivePackage, SentPackage
 
 class TimeEntry:
     def __init__(self):
@@ -107,7 +107,7 @@ class Loss_Calculator:
     def __repr__(self):
         return f"{str(self.time_table)}\n{str(self.packet_table)}"
 
-    def get_last_packages(self, number_of_packages: int) -> [PacketEntry]:
+    def get_last_packages(self, number_of_packages: int):
         arr = []
         counter = number_of_packages
         i = iter(reversed(self.packet_table))

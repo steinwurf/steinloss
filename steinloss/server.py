@@ -10,9 +10,9 @@ from steinloss.package import SentPackage, ReceivePackage, Package
  """
 
 from Data_Presenter import Data_Presenter
-from package import SentPackage, ReceivePackage, Package
+from Package import SentPackage, ReceivePackage, Package
 from utilities import log
-
+from DataCollection import DataCollection
 ONE_SECOND = 1
 
 kilobyte = 1024
@@ -36,6 +36,7 @@ class Server:
         self.__interval = 1
         self.speed = speed
         self.data_presenter = Data_Presenter.get_instance()
+        self.data_collection = DataCollection()
 
         #making the port and host reusable:
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -126,7 +127,7 @@ class Server:
             self.shutdown()
 
     def save_entry(self, package: Package):
-        self.data_presenter.append(package)
+        self.data_collection.add(package)
 
     async def log_forever(self):
         while True:
@@ -150,7 +151,6 @@ class Server:
         start_time = time.time()
         while True:
             self.send_packet(address)
-
             await asyncio.sleep(self.__interval - (time.time() - start_time) % self.__interval)
 
     def calculate_packet_loss_in_pct(self, timestamp: datetime):
@@ -203,7 +203,6 @@ class EchoServerProtocol(asyncio.DatagramProtocol):
         received_packet = numbers[1]
 
         package = ReceivePackage(sent_packet, received_packet, datetime.now())
-        self.server.data_presenter.append(package)
-
+        self.server.data_collection.add(package)
 
 

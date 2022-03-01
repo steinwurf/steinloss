@@ -33,7 +33,7 @@ class Data_Presenter(object):
     def append(self, packet):
         self.data.add(packet)
 
-    def latest_packages(self, amount=1) -> [PacketEntry]:
+    def latest_packages(self, amount=1):
         return self.data.get_last_packages(amount)
 
     def get_time_table(self) -> TimeTable:

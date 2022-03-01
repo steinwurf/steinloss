@@ -19,6 +19,7 @@ from steinloss.Data_Presenter import Data_Presenter """
 
 from Data_Presenter import Data_Presenter
 from utilities import log
+from DataCollection import DataCollection
 
 TIME = 'TIME'
 
@@ -77,8 +78,11 @@ def update_graph_live(n):
     }
 
     # Collect some data
-    data_presenter = Data_Presenter.get_instance()
-    time_table = data_presenter.get_time_table()
+    """data_presenter = Data_Presenter.get_instance()
+    time_table = data_presenter.get_time_table() """
+    
+    Data_Presenter = DataCollection()
+    time_table = Data_Presenter.get_time_table()
     base = datetime.now() - timedelta(seconds=30)  # 30 seconds behind
 
     timestamp_array = numpy.array([base - timedelta(seconds=i) for i in range(1, 180)])
@@ -112,8 +116,9 @@ def update_sent_lost(n):
     }
 
     # Collect some data
-    data_presenter = Data_Presenter.get_instance()
-    time_table = data_presenter.get_time_table()
+    data_collection = DataCollection()
+    time_table = data_collection.get_time_table()
+
     base = datetime.now() - timedelta(seconds=30)  # 30 seconds behind
 
     timestamp_array = numpy.array([base - timedelta(seconds=i) for i in range(1, 180)])
@@ -150,8 +155,9 @@ def download_data(n_clicks):
     }
 
     # Collect some data
-    data_presenter = Data_Presenter.get_instance()
+    data_presenter = DataCollection()
     time_table = data_presenter.get_time_table()
+
     base = datetime.now() - timedelta(seconds=30)  # 30 seconds behind
 
     timestamp_array = numpy.array([base - timedelta(seconds=i) for i in range(1, 180)])
