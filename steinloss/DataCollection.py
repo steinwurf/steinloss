@@ -3,6 +3,10 @@ from TimeTable import TimeTable
 from PacketTable import PacketTable
 from Package import Package, ReceivePackage, SentPackage
 from datetime import datetime
+import numpy as np
+from datetime import datetime, timedelta
+import pandas as pd
+from hurry.filesize import size, verbose
 
 
 
@@ -55,3 +59,36 @@ class DataCollection(metaclass=Singleton):
 
         return arr
 
+    def retrieve_lost_percentage_over_time(self):
+        data = {
+        'Time': [],
+        'Loss': [],
+        }
+        
+        time_table = self.time_table
+        base = datetime.now() - timedelta(seconds=30)  # 30 seconds behind
+
+        timestamp_array = np.array([base - timedelta(seconds=i) for i in range(1, 180)])
+        for timestamp in timestamp_array:
+            data["Time"].append(timestamp)
+
+            loss_decimal = 0
+            entry = time_table[timestamp]
+            if entry.sent != 0:
+                loss_decimal = entry.loss / entry.sent
+            loss_pct = loss_decimal * 100
+            data['Loss'].append(loss_pct)
+
+        df = pd.DataFrame.from_dict(data)
+        
+        return df
+
+    def get_actual_package_speed(self):
+        time_table = self.get_time_table()
+
+        timestamp = datetime.now() - timedelta(seconds=15) #15 seconds delayed
+        time_entry = time_table[timestamp]
+
+        speed = size(time_entry.sent * 1024, system=verbose)
+
+        return speed

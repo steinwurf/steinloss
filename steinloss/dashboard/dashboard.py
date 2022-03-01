@@ -14,18 +14,8 @@ from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 from hurry.filesize import size, verbose
 
-""" from steinloss import log
-from steinloss.Data_Presenter import Data_Presenter """
-
-from Data_Presenter import Data_Presenter
 from utilities import log
 from DataCollection import DataCollection
-
-TIME = 'TIME'
-
-LOSS = 'loss'
-PACKET_COUNT = 'loss-count'
-PACKET_TYPE = 'sent-count'
 
 external_stylesheets = ['https://stackpath.bootstrapcdn.com/bootswatch/4.5.2/flatly/bootstrap.min.css']
 
@@ -55,13 +45,9 @@ start = datetime.now()
               [Input('interval-component', 'n_intervals')])
 def update_metrics(n):
     style = {'padding': '5px', 'fontSize': '16px'}
-    data_presenter = Data_Presenter.get_instance()
-    time_table = data_presenter.get_time_table()
 
-    timestamp = datetime.now() - timedelta(seconds=15)
-    time_entry = time_table[timestamp]
-
-    speed = size(time_entry.sent * 1024, system=verbose)
+    data_collection = DataCollection()
+    speed = data_collection.get_actual_package_speed()
 
     return [
         html.Span(f"Actual package speed: {speed}/s", style=style),
@@ -72,36 +58,15 @@ def update_metrics(n):
 @app.callback(Output('lost-percent-graph', 'figure'),
               [Input('interval-component', 'n_intervals')])
 def update_graph_live(n):
-    data = {
-        TIME: [],
-        LOSS: [],
-    }
+    # Retrieve some data
+    data_collection = DataCollection()
+    df = data_collection.retrieve_lost_percentage_over_time()
 
-    # Collect some data
-    """data_presenter = Data_Presenter.get_instance()
-    time_table = data_presenter.get_time_table() """
-    
-    Data_Presenter = DataCollection()
-    time_table = Data_Presenter.get_time_table()
-    base = datetime.now() - timedelta(seconds=30)  # 30 seconds behind
-
-    timestamp_array = numpy.array([base - timedelta(seconds=i) for i in range(1, 180)])
-    for timestamp in timestamp_array:
-        data[TIME].append(timestamp)
-
-        loss_decimal = 0
-        entry = time_table[timestamp]
-        if entry.sent != 0:
-            loss_decimal = entry.loss / entry.sent
-        loss_pct = loss_decimal * 100
-        data[LOSS].append(loss_pct)
-
-    df = pd.DataFrame.from_dict(data)
     # Create the graph
-    fig = px.line(df, x=TIME, y=LOSS, title="Loss",
+    fig = px.line(df, x='Time', y='Loss', title="Loss",
                     labels={
-                        LOSS: 'Package loss (%) ',
-                        TIME: 'Timestamp ',
+                        'Loss': 'Package loss (%) ',
+                        'Time': 'Timestamp ',
                     })
     return fig
 
@@ -110,9 +75,9 @@ def update_graph_live(n):
               [Input('interval-component', 'n_intervals')])
 def update_sent_lost(n):
     data = {
-        TIME: [],
-        PACKET_TYPE: [],
-        PACKET_COUNT: []
+        'Time': [],
+        'sent-count': [],
+        'loss-count': []
     }
 
     # Collect some data
@@ -125,23 +90,23 @@ def update_sent_lost(n):
     for timestamp in timestamp_array:
         entry = time_table[timestamp]
 
-        data[TIME].append(timestamp)
-        data[PACKET_COUNT].append(entry.sent - entry.loss)
-        data[PACKET_TYPE].append('received')
+        data['Time'].append(timestamp)
+        data['loss-count'].append(entry.sent - entry.loss)
+        data['sent-count'].append('received')
 
-        data[TIME].append(timestamp)
-        data[PACKET_COUNT].append(entry.sent)
-        data[PACKET_TYPE].append('sent')
+        data['Time'].append(timestamp)
+        data['loss-count'].append(entry.sent)
+        data['sent-count'].append('sent')
 
     df = pd.DataFrame.from_dict(data)
 
 
     # Create the graph
-    fig = px.line(df, x=TIME, y=PACKET_COUNT, title="Sent/Received", color=PACKET_TYPE,
+    fig = px.line(df, x='Time', y='loss-count', title="Sent/Received", color='sent-count',
                     labels={
-                        PACKET_COUNT: 'Packets: ',
-                        TIME: 'Timestamp ',
-                        PACKET_TYPE: 'Type: '
+                        'loss-count': 'Packets: ',
+                        'Time': 'Timestamp ',
+                        'sent-count': 'Type: '
                     })
     return fig
 
@@ -150,26 +115,26 @@ def update_sent_lost(n):
               prevent_initial_call=True)
 def download_data(n_clicks):
     data = {
-        TIME: [],
-        LOSS: [],
+        'Time': [],
+        'Time': [],
     }
 
     # Collect some data
-    data_presenter = DataCollection()
-    time_table = data_presenter.get_time_table()
+    data_collection = DataCollection()
+    time_table = data_collection.get_time_table()
 
     base = datetime.now() - timedelta(seconds=30)  # 30 seconds behind
 
     timestamp_array = numpy.array([base - timedelta(seconds=i) for i in range(1, 180)])
     for timestamp in timestamp_array:
-        data[TIME].append(timestamp)
+        data['Time'].append(timestamp)
 
         loss_decimal = 0
         entry = time_table[timestamp]
         if entry.sent != 0:
             loss_decimal = entry.loss / entry.sent
         loss_pct = loss_decimal * 100
-        data[LOSS].append(loss_pct)
+        data['Loss'].append(loss_pct)
 
     df = pd.DataFrame.from_dict(data)
 

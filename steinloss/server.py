@@ -4,12 +4,6 @@ import time
 from datetime import datetime, timedelta
 from typing import Tuple
 
-""" from steinloss import log
-from steinloss.Data_Presenter import Data_Presenter
-from steinloss.package import SentPackage, ReceivePackage, Package
- """
-
-from Data_Presenter import Data_Presenter
 from Package import SentPackage, ReceivePackage, Package
 from utilities import log
 from DataCollection import DataCollection
@@ -35,7 +29,6 @@ class Server:
         self.id = 0
         self.__interval = 1
         self.speed = speed
-        self.data_presenter = Data_Presenter.get_instance()
         self.data_collection = DataCollection()
 
         #making the port and host reusable:
@@ -139,13 +132,13 @@ class Server:
 
         packet_loss = self.calculate_packet_loss_in_pct(one_second_in_the_past)
 
-        sent = self.data_presenter.get_time_table()[one_second_in_the_past].sent
-        received = self.data_presenter.get_time_table()[one_second_in_the_past].received
+        sent = self.data_collection.get_time_table()[one_second_in_the_past].sent
+        received = self.data_collection.get_time_table()[one_second_in_the_past].received
 
-        log(f"{sent} packets sent last second |"
+    """         log(f"{sent} packets sent last second |"
             + f" {received} packets received last second ",
             " | package loss: {:.2f}".format(packet_loss * 100),
-            end='\r')
+            end='\r') """
 
     async def serve_forever(self, address):
         start_time = time.time()
@@ -154,7 +147,7 @@ class Server:
             await asyncio.sleep(self.__interval - (time.time() - start_time) % self.__interval)
 
     def calculate_packet_loss_in_pct(self, timestamp: datetime):
-        time_entry = self.data_presenter.get_time_table()[timestamp]
+        time_entry = self.data_collection.get_time_table()[timestamp]
         packages_sent = time_entry.sent
         packages_recv = time_entry.received
 
