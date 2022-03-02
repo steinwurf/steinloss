@@ -9,10 +9,10 @@ from steinloss.probe import Probe
 from steinloss.server import Server """
 
 __version__ = "0.3.6"
-from dashboard import dashboard
-from probe import Probe
-from server import Server
-from utilities import log
+from steinloss.dashboard import dashboard
+from steinloss.probe import Probe
+from steinloss.server import Server
+from steinloss.utilities import log
 
 kilobyte = 1024
 mb = kilobyte * kilobyte

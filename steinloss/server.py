@@ -4,9 +4,9 @@ import time
 from datetime import datetime, timedelta
 from typing import Tuple
 
-from Package import SentPackage, ReceivePackage, Package
-from utilities import log
-from DataCollection import DataCollection
+from steinloss.Package import SentPackage, ReceivePackage, Package
+from steinloss.utilities import log
+from steinloss.DataCollection import DataCollection
 ONE_SECOND = 1
 
 kilobyte = 1024

@@ -1,7 +1,7 @@
-from class_patterns import Singleton
-from TimeTable import TimeTable
-from PacketTable import PacketTable
-from Package import Package, ReceivePackage, SentPackage
+from steinloss.class_patterns import Singleton
+from steinloss.TimeTable import TimeTable
+from steinloss.PacketTable import PacketTable
+from steinloss.Package import Package, ReceivePackage, SentPackage
 from datetime import datetime
 import numpy as np
 from datetime import datetime, timedelta

@@ -14,8 +14,8 @@ from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 from hurry.filesize import size, verbose
 
-from utilities import log
-from DataCollection import DataCollection
+from steinloss.utilities import log
+from steinloss.DataCollection import DataCollection
 
 external_stylesheets = ['https://stackpath.bootstrapcdn.com/bootswatch/4.5.2/flatly/bootstrap.min.css']
 
