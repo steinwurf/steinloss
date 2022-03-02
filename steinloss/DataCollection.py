@@ -83,6 +83,26 @@ class DataCollection(metaclass=Singleton):
         
         return df
 
+    def retrieve_sent_recieved_packets_df(self):
+        data = {
+        'time': [],
+        'sent-count': [],
+        'recieved-count': []
+        }
+
+        base = datetime.now() - timedelta(seconds=30)  # 30 seconds behind
+
+        timestamp_array = np.array([base - timedelta(seconds=i) for i in range(1, 180)])
+        for timestamp in timestamp_array:
+            entry = self.time_table[timestamp]
+
+            data['time'].append(timestamp)
+            data['recieved-count'].append(entry.sent - entry.loss)
+            data['sent-count'].append(entry.sent)
+
+        df = pd.DataFrame.from_dict(data)
+        return df
+
     def get_actual_package_speed(self):
         time_table = self.get_time_table()
 

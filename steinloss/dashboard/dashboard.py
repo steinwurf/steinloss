@@ -3,6 +3,7 @@ import urllib.parse
 from copy import copy
 from datetime import datetime, timedelta
 
+import plotly.graph_objects as go
 import dash
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
@@ -74,69 +75,23 @@ def update_graph_live(n):
 @app.callback(Output('lost-sent-graph', 'figure'),
               [Input('interval-component', 'n_intervals')])
 def update_sent_lost(n):
-    data = {
-        'Time': [],
-        'sent-count': [],
-        'loss-count': []
-    }
-
-    # Collect some data
     data_collection = DataCollection()
-    time_table = data_collection.get_time_table()
-
-    base = datetime.now() - timedelta(seconds=30)  # 30 seconds behind
-
-    timestamp_array = numpy.array([base - timedelta(seconds=i) for i in range(1, 180)])
-    for timestamp in timestamp_array:
-        entry = time_table[timestamp]
-
-        data['Time'].append(timestamp)
-        data['loss-count'].append(entry.sent - entry.loss)
-        data['sent-count'].append('received')
-
-        data['Time'].append(timestamp)
-        data['loss-count'].append(entry.sent)
-        data['sent-count'].append('sent')
-
-    df = pd.DataFrame.from_dict(data)
-
+    df = data_collection.retrieve_sent_recieved_packets_df()
 
     # Create the graph
-    fig = px.line(df, x='Time', y='loss-count', title="Sent/Received", color='sent-count',
-                    labels={
-                        'loss-count': 'Packets: ',
-                        'Time': 'Timestamp ',
-                        'sent-count': 'Type: '
-                    })
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(x=df['time'], y=df['sent-count']))
+    fig.add_trace(go.Scatter(x=df['time'], y=df['recieved-count']))
+
     return fig
 
 @app.callback(Output('download_component', 'data'),
               Input('download_button', 'n_clicks'),
               prevent_initial_call=True)
 def download_data(n_clicks):
-    data = {
-        'Time': [],
-        'Time': [],
-    }
-
-    # Collect some data
     data_collection = DataCollection()
-    time_table = data_collection.get_time_table()
-
-    base = datetime.now() - timedelta(seconds=30)  # 30 seconds behind
-
-    timestamp_array = numpy.array([base - timedelta(seconds=i) for i in range(1, 180)])
-    for timestamp in timestamp_array:
-        data['Time'].append(timestamp)
-
-        loss_decimal = 0
-        entry = time_table[timestamp]
-        if entry.sent != 0:
-            loss_decimal = entry.loss / entry.sent
-        loss_pct = loss_decimal * 100
-        data['Loss'].append(loss_pct)
-
-    df = pd.DataFrame.from_dict(data)
+    df = data_collection.retrieve_lost_percentage_over_time()
 
     return dcc.send_data_frame(df.to_csv, "package_data.csv")
 
