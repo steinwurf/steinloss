@@ -15,6 +15,7 @@ class DataCollection(metaclass=Singleton):
         self.time_table = TimeTable()
         self.packet_table = PacketTable()
 
+
     def get_time_table(self):
         return self.time_table
 
@@ -61,23 +62,24 @@ class DataCollection(metaclass=Singleton):
 
     def retrieve_lost_percentage_over_time(self):
         data = {
-        'Time': [],
-        'Loss': [],
+        'time': [],
+        'loss': [],
         }
         
         time_table = self.time_table
         base = datetime.now() - timedelta(seconds=30)  # 30 seconds behind
 
-        timestamp_array = np.array([base - timedelta(seconds=i) for i in range(1, 180)])
-        for timestamp in timestamp_array:
-            data["Time"].append(timestamp)
+        data['time'] = np.array([base - timedelta(seconds=i) for i in range(1, 180)])
 
-            loss_decimal = 0
+        for timestamp in data['time']:
             entry = time_table[timestamp]
+
             if entry.sent != 0:
-                loss_decimal = entry.loss / entry.sent
-            loss_pct = loss_decimal * 100
-            data['Loss'].append(loss_pct)
+                loss_pct = entry.loss / entry.sent * 100
+            else:
+                loss_pct = 0
+
+            data['loss'].append(loss_pct)
 
         df = pd.DataFrame.from_dict(data)
         
@@ -92,18 +94,17 @@ class DataCollection(metaclass=Singleton):
 
         base = datetime.now() - timedelta(seconds=30)  # 30 seconds behind
 
-        timestamp_array = np.array([base - timedelta(seconds=i) for i in range(1, 180)])
-        for timestamp in timestamp_array:
+        data['time'] = np.array([base - timedelta(seconds=i) for i in range(1, 180)])
+        for timestamp in data['time']:
             entry = self.time_table[timestamp]
 
-            data['time'].append(timestamp)
             data['recieved-count'].append(entry.sent - entry.loss)
             data['sent-count'].append(entry.sent)
 
         df = pd.DataFrame.from_dict(data)
         return df
 
-    def get_actual_package_speed(self):
+    def get_actual_package_speed(self): 
         time_table = self.get_time_table()
 
         timestamp = datetime.now() - timedelta(seconds=15) #15 seconds delayed
@@ -112,3 +113,14 @@ class DataCollection(metaclass=Singleton):
         speed = size(time_entry.sent * 1024, system=verbose)
 
         return speed
+
+    def get_package_loss_time(self, timestamp: datetime):
+        time_entry = self.time_table[timestamp]
+
+        packages_sent = time_entry.sent
+        packages_recv = time_entry.received
+
+        if packages_sent == 0 or packages_recv == 0:
+            return 0
+        else:
+            return 1 - packages_recv / packages_sent

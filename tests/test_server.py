@@ -2,7 +2,7 @@ import asyncio
 import pytest
 
 from datetime import datetime
-from steinloss.Data_Presenter import Data_Presenter
+from steinloss.DataCollection import DataCollection
 from steinloss.Package import SentPackage, ReceivePackage
 from steinloss.server import Server
 
@@ -12,7 +12,7 @@ kilobyte = 1024
 class TestServer:
 
     def teardown_method(self):
-        Data_Presenter.clear_instance()
+        DataCollection.clear_instance()
 
     @pytest.mark.parametrize(
         "speed, interval", [(kilobyte, 1), (2 * kilobyte, 0.5), (4 * kilobyte, 0.25)]
@@ -39,7 +39,7 @@ class TestServer:
         for i in range(packets):
             server.send_packet('ip_address')
 
-        assert server.data_presenter.get_time_table()[time].sent == packets
+        assert server.data_collection.get_time_table()[time].sent == packets
 
     def test_wait_for_probe_should_return_address_of_probe(self, mocker):
         server = Server()

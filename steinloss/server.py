@@ -130,31 +130,21 @@ class Server:
     def log(self):
         one_second_in_the_past = datetime.now() - timedelta(seconds=2)
 
-        packet_loss = self.calculate_packet_loss_in_pct(one_second_in_the_past)
+        packet_loss = self.data_collection.get_package_loss_time(one_second_in_the_past)
 
         sent = self.data_collection.get_time_table()[one_second_in_the_past].sent
         received = self.data_collection.get_time_table()[one_second_in_the_past].received
 
-    """         log(f"{sent} packets sent last second |"
+        log(f"{sent} packets sent last second |"
             + f" {received} packets received last second ",
             " | package loss: {:.2f}".format(packet_loss * 100),
-            end='\r') """
+            end='\r') 
 
     async def serve_forever(self, address):
         start_time = time.time()
         while True:
             self.send_packet(address)
             await asyncio.sleep(self.__interval - (time.time() - start_time) % self.__interval)
-
-    def calculate_packet_loss_in_pct(self, timestamp: datetime):
-        time_entry = self.data_collection.get_time_table()[timestamp]
-        packages_sent = time_entry.sent
-        packages_recv = time_entry.received
-
-        if packages_sent == 0 or packages_recv == 0:
-            return 0
-        else:
-            return 1 - packages_recv / packages_sent
 
     def shutdown(self):
         self.server_socket.close()

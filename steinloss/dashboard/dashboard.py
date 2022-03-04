@@ -4,6 +4,7 @@ from copy import copy
 from datetime import datetime, timedelta
 
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 import dash
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
@@ -29,6 +30,7 @@ app.layout = html.Div([
         html.Div(id='live-update-text'),
         dcc.Graph(id='lost-percent-graph'),
         dcc.Graph(id='lost-sent-graph'),
+        dcc.Graph(id='distribution'),
         dcc.Interval(
             id='interval-component',
             interval=5 * 1000,  # in milliseconds
@@ -63,12 +65,15 @@ def update_graph_live(n):
     data_collection = DataCollection()
     df = data_collection.retrieve_lost_percentage_over_time()
 
-    # Create the graph
-    fig = px.line(df, x='Time', y='Loss', title="Loss",
-                    labels={
-                        'Loss': 'Package loss (%) ',
-                        'Time': 'Timestamp ',
-                    })
+    # Create the figure
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=df['time'], y=df['loss'], name= 'Lost packages'))
+
+    fig.update_layout(
+        title='Percent of Lost Packages Over Time',
+        xaxis_title='Time',
+        yaxis_title= 'Package Loss (%)')
+
     return fig
 
 
@@ -78,11 +83,15 @@ def update_sent_lost(n):
     data_collection = DataCollection()
     df = data_collection.retrieve_sent_recieved_packets_df()
 
-    # Create the graph
+    # Create the figure
     fig = go.Figure()
+    fig.add_trace(go.Scatter(x=df['time'], y=df['sent-count'], name= 'Sent'))
+    fig.add_trace(go.Scatter(x=df['time'], y=df['recieved-count'], name= 'Recieved'))
 
-    fig.add_trace(go.Scatter(x=df['time'], y=df['sent-count']))
-    fig.add_trace(go.Scatter(x=df['time'], y=df['recieved-count']))
+    fig.update_layout(
+        title='Count of Sent and Recieved Packages',
+        xaxis_title='Time',
+        yaxis_title= 'Number of Packages')
 
     return fig
 
@@ -94,6 +103,38 @@ def download_data(n_clicks):
     df = data_collection.retrieve_lost_percentage_over_time()
 
     return dcc.send_data_frame(df.to_csv, "package_data.csv")
+
+
+@app.callback(Output('distribution', 'figure'),
+              [Input('interval-component', 'n_intervals')])
+def update_sent_lost(n):
+    data_collection = DataCollection()
+    df_sent_recieved = data_collection.retrieve_sent_recieved_packets_df()
+    df_loss_pct = data_collection.retrieve_lost_percentage_over_time()
+
+
+    #The first datapoints arent relavent due to the server starting up.
+    df_sent_recieved_filtered = df_sent_recieved[df_sent_recieved['sent-count'] > 800]
+    df_loss_pct_filtered = df_loss_pct[df_loss_pct['loss']>0]
+    
+    fig= make_subplots(rows=1, cols=3, subplot_titles=['Packet Loss in Percent ', 'Count of Recieved Packets ', 'Count of Sent Packets'])
+
+
+    #lost-pct 
+    fig.add_trace(go.Histogram(x=df_loss_pct_filtered['loss'],
+                                        histnorm='probability'), row=1, col=3)
+
+    #recieved
+    fig.add_trace(go.Histogram(x=df_sent_recieved_filtered['recieved-count'],
+    ), row=1, col=2)
+
+    #sent histogram:
+    fig.add_trace(go.Histogram(x=df_sent_recieved_filtered['sent-count']), row=1, col=1)
+
+
+    fig.update_layout(showlegend=False)
+    return fig
+
 
 def run():
     app.run_server(host='0.0.0.0', port=8050)
