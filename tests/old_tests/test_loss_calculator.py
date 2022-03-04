@@ -151,3 +151,4 @@ class TestLossCalculator:
     # Test ideas:
     # what happens after 24H
  """
+ 
