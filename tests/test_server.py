@@ -2,8 +2,8 @@ import asyncio
 import pytest
 
 from datetime import datetime
-from steinloss.Data_Presenter import Data_Presenter
-from steinloss.package import SentPackage, ReceivePackage
+from steinloss.DataCollection import DataCollection
+from steinloss.Package import SentPackage, ReceivePackage
 from steinloss.server import Server
 
 kilobyte = 1024
@@ -12,7 +12,7 @@ kilobyte = 1024
 class TestServer:
 
     def teardown_method(self):
-        Data_Presenter.clear_instance()
+        DataCollection.clear()
 
     @pytest.mark.parametrize(
         "speed, interval", [(kilobyte, 1), (2 * kilobyte, 0.5), (4 * kilobyte, 0.25)]
@@ -39,7 +39,7 @@ class TestServer:
         for i in range(packets):
             server.send_packet('ip_address')
 
-        assert server.data_presenter.get_time_table()[time].sent == packets
+        assert server.data_collection.get_time_table()[time].sent == packets
 
     def test_wait_for_probe_should_return_address_of_probe(self, mocker):
         server = Server()
@@ -73,20 +73,6 @@ class TestServer:
         await asyncio.sleep(duration, loop=event_loop)
 
         assert mocked_sendto.call_count == packages
-
-    # shutdown should log rest, and close socket
-    def test_calculate_packet_loss_should_answer_in_pct_of_lost_packets(self):
-        server = Server()
-        time = datetime.now()
-
-        server.save_entry(SentPackage("1", time))
-        server.save_entry(SentPackage("2", time))
-        server.save_entry(ReceivePackage("1", "1", time))
-
-        assert server.calculate_packet_loss_in_pct(time) == 0.5
-
-
-# divide by zero in calculate loss
 
 
 class FakeTime:

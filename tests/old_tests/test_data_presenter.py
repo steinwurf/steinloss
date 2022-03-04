@@ -1,10 +1,10 @@
-from datetime import datetime
+""" from datetime import datetime
 
 import pytest
 from freezegun import freeze_time
 
 from steinloss.Data_Presenter import Data_Presenter
-from steinloss.package import SentPackage, ReceivePackage
+from steinloss.Package import SentPackage, ReceivePackage
 
 
 class TestDataPresenter:
@@ -87,3 +87,4 @@ class TestDataPresenter:
         # get time table
         package_info = data_presenter.get_time_table()
         assert package_info[time].sent == 2
+ """
