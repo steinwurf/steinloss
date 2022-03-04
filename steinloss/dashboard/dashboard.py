@@ -131,7 +131,6 @@ def update_sent_lost(n):
     #sent histogram:
     fig.add_trace(go.Histogram(x=df_sent_recieved_filtered['sent-count']), row=1, col=1)
 
-
     fig.update_layout(showlegend=False)
     return fig
 
