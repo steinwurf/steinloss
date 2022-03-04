@@ -1,4 +1,4 @@
-from freezegun import freeze_time
+""" from freezegun import freeze_time
 from datetime import datetime, timedelta
 
 from steinloss.loss_calculator import Loss_Calculator, TimeTable
@@ -150,3 +150,4 @@ class TestLossCalculator:
 
     # Test ideas:
     # what happens after 24H
+ """

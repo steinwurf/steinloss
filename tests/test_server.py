@@ -12,7 +12,7 @@ kilobyte = 1024
 class TestServer:
 
     def teardown_method(self):
-        DataCollection.clear_instance()
+        DataCollection.clear()
 
     @pytest.mark.parametrize(
         "speed, interval", [(kilobyte, 1), (2 * kilobyte, 0.5), (4 * kilobyte, 0.25)]
@@ -73,20 +73,6 @@ class TestServer:
         await asyncio.sleep(duration, loop=event_loop)
 
         assert mocked_sendto.call_count == packages
-
-    # shutdown should log rest, and close socket
-    def test_calculate_packet_loss_should_answer_in_pct_of_lost_packets(self):
-        server = Server()
-        time = datetime.now()
-
-        server.save_entry(SentPackage("1", time))
-        server.save_entry(SentPackage("2", time))
-        server.save_entry(ReceivePackage("1", "1", time))
-
-        assert server.calculate_packet_loss_in_pct(time) == 0.5
-
-
-# divide by zero in calculate loss
 
 
 class FakeTime:
