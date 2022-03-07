@@ -123,8 +123,8 @@ def update_distributions(n):
 
     # lost-pct
     fig.add_trace(go.Histogram(x=df_loss_pct_filtered['loss'],
-                               histnorm='probability'), 
-                  row=1, 
+                               histnorm='probability'),
+                  row=1,
                   col=3)
 
     # recieved
@@ -135,7 +135,7 @@ def update_distributions(n):
 
     # sent histogram:
     fig.add_trace(go.Histogram(x=df_sent_recieved_filtered['sent-count'],
-                                    histnorm='probability'), 
+                                    histnorm='probability'),
                   row=1,
                   col=1)
 
