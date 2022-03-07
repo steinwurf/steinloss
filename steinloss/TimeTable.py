@@ -1,6 +1,7 @@
 from steinloss.Package import Package, ReceivePackage, SentPackage
 from datetime import datetime
 
+
 class TimeEntry:
     def __init__(self):
         self.loss = 0

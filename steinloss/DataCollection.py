@@ -15,7 +15,6 @@ class DataCollection(metaclass=Singleton):
         self.time_table = TimeTable()
         self.packet_table = PacketTable()
 
-
     def get_time_table(self):
         return self.time_table
 
@@ -62,10 +61,9 @@ class DataCollection(metaclass=Singleton):
 
     def retrieve_lost_percentage_over_time(self):
         data = {
-        'time': [],
-        'loss': [],
-        }
-        
+            'time': [],
+            'loss': [],
+            }
         time_table = self.time_table
         base = datetime.now() - timedelta(seconds=30)  # 30 seconds behind
 
@@ -87,10 +85,10 @@ class DataCollection(metaclass=Singleton):
 
     def retrieve_sent_recieved_packets_df(self):
         data = {
-        'time': [],
-        'sent-count': [],
-        'recieved-count': []
-        }
+            'time': [],
+            'sent-count': [],
+            'recieved-count': []
+            }
 
         base = datetime.now() - timedelta(seconds=30)  # 30 seconds behind
 
@@ -104,10 +102,10 @@ class DataCollection(metaclass=Singleton):
         df = pd.DataFrame.from_dict(data)
         return df
 
-    def get_actual_package_speed(self): 
+    def get_actual_package_speed(self):
         time_table = self.get_time_table()
 
-        timestamp = datetime.now() - timedelta(seconds=15) #15 seconds delayed
+        timestamp = datetime.now() - timedelta(seconds=15)  # 15 seconds delayed
         time_entry = time_table[timestamp]
 
         speed = size(time_entry.sent * 1024, system=verbose)

@@ -67,12 +67,12 @@ def update_graph_live(n):
 
     # Create the figure
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=df['time'], y=df['loss'], name= 'Lost packages'))
+    fig.add_trace(go.Scatter(x=df['time'], y=df['loss'], name='Lost packages'))
 
     fig.update_layout(
         title='Percent of Lost Packages Over Time',
         xaxis_title='Time',
-        yaxis_title= 'Package Loss (%)')
+        yaxis_title='Package Loss (%)')
 
     return fig
 
@@ -85,8 +85,8 @@ def update_sent_lost(n):
 
     # Create the figure
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=df['time'], y=df['sent-count'], name= 'Sent'))
-    fig.add_trace(go.Scatter(x=df['time'], y=df['recieved-count'], name= 'Recieved'))
+    fig.add_trace(go.Scatter(x=df['time'], y=df['sent-count'], name='Sent'))
+    fig.add_trace(go.Scatter(x=df['time'], y=df['recieved-count'], name='Recieved'))
 
     fig.update_layout(
         title='Count of Sent and Recieved Packages',
@@ -94,6 +94,7 @@ def update_sent_lost(n):
         yaxis_title= 'Number of Packages')
 
     return fig
+
 
 @app.callback(Output('download_component', 'data'),
               Input('download_button', 'n_clicks'),
@@ -113,23 +114,25 @@ def update_sent_lost(n):
     df_loss_pct = data_collection.retrieve_lost_percentage_over_time()
 
 
-    #The first datapoints arent relavent due to the server starting up.
+    # The first datapoints arent relavent due to the server starting up.
     df_sent_recieved_filtered = df_sent_recieved[df_sent_recieved['sent-count'] > 800]
     df_loss_pct_filtered = df_loss_pct[df_loss_pct['loss']>0]
     
-    fig= make_subplots(rows=1, cols=3, subplot_titles=['Packet Loss in Percent ', 'Count of Recieved Packets ', 'Count of Sent Packets'])
+    fig= make_subplots(rows=1, cols=3, 
+                        subplot_titles=['Packet Loss in Percent ', 'Count of Recieved Packets', 'Count of Sent Packets'])
 
 
-    #lost-pct 
+    # lost-pct 
     fig.add_trace(go.Histogram(x=df_loss_pct_filtered['loss'],
-                                        histnorm='probability'), row=1, col=3)
+                                histnorm='probability'), row=1, col=3)
 
-    #recieved
+    # recieved
     fig.add_trace(go.Histogram(x=df_sent_recieved_filtered['recieved-count'],
-    ), row=1, col=2)
+                                histnorm='probability'), row=1, col=2)
 
-    #sent histogram:
-    fig.add_trace(go.Histogram(x=df_sent_recieved_filtered['sent-count']), row=1, col=1)
+    # sent histogram:
+    fig.add_trace(go.Histogram(x=df_sent_recieved_filtered['sent-count'],
+                                histnorm='probability'), row=1, col=1)
 
     fig.update_layout(showlegend=False)
     return fig

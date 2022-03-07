@@ -31,7 +31,7 @@ class Server:
         self.speed = speed
         self.data_collection = DataCollection()
 
-        #making the port and host reusable:
+        # making the port and host reusable:
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     @property
@@ -138,7 +138,7 @@ class Server:
         log(f"{sent} packets sent last second |"
             + f" {received} packets received last second ",
             " | package loss: {:.2f}".format(packet_loss * 100),
-            end='\r') 
+            end='\r')
 
     async def serve_forever(self, address):
         start_time = time.time()
@@ -187,5 +187,3 @@ class EchoServerProtocol(asyncio.DatagramProtocol):
 
         package = ReceivePackage(sent_packet, received_packet, datetime.now())
         self.server.data_collection.add(package)
-
-
