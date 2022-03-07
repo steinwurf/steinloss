@@ -7,8 +7,8 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import dash
 import dash_bootstrap_components as dbc
-import dash_core_components as dcc
-import dash_html_components as html
+from dash import dcc
+from dash import html
 import numpy
 import pandas as pd
 import plotly.express as px
@@ -125,7 +125,7 @@ def update_distributions(n):
     fig.add_trace(go.Histogram(x=df_loss_pct_filtered['loss'],
                                histnorm='probability'),
                   row=1,
-                  col=3)
+                  col=1)
 
     # recieved
     fig.add_trace(go.Histogram(x=df_sent_recieved_filtered['recieved-count'],
@@ -137,7 +137,7 @@ def update_distributions(n):
     fig.add_trace(go.Histogram(x=df_sent_recieved_filtered['sent-count'],
                                histnorm='probability'),
                   row=1,
-                  col=1)
+                  col=3)
 
     fig.update_layout(showlegend=False)
     return fig
