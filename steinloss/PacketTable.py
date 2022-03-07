@@ -1,5 +1,6 @@
 from datetime import datetime
 
+
 class PacketEntry:
     sent_at: datetime
     received_at: datetime
