@@ -2,12 +2,10 @@ from steinloss.class_patterns import Singleton
 from steinloss.TimeTable import TimeTable
 from steinloss.PacketTable import PacketTable
 from steinloss.Package import Package, ReceivePackage, SentPackage
-from datetime import datetime
 import numpy as np
 from datetime import datetime, timedelta
 import pandas as pd
 from hurry.filesize import size, verbose
-
 
 
 class DataCollection(metaclass=Singleton):
@@ -63,7 +61,7 @@ class DataCollection(metaclass=Singleton):
         data = {
             'time': [],
             'loss': [],
-            }
+        }
         time_table = self.time_table
         base = datetime.now() - timedelta(seconds=30)  # 30 seconds behind
 
@@ -80,7 +78,6 @@ class DataCollection(metaclass=Singleton):
             data['loss'].append(loss_pct)
 
         df = pd.DataFrame.from_dict(data)
-        
         return df
 
     def retrieve_sent_recieved_packets_df(self):
@@ -88,7 +85,7 @@ class DataCollection(metaclass=Singleton):
             'time': [],
             'sent-count': [],
             'recieved-count': []
-            }
+        }
 
         base = datetime.now() - timedelta(seconds=30)  # 30 seconds behind
 

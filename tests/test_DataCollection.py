@@ -94,4 +94,3 @@ class TestDataCollection:
         data_collection.add(ReceivePackage('3', '3', time_stamp))
 
         assert data_collection[time_stamp].loss == 1
-        

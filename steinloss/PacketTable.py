@@ -29,4 +29,3 @@ class PacketTable(dict):
 
     def __iter__(self):
         return super().__iter__()
-        
