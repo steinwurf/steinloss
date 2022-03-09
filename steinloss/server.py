@@ -72,12 +72,16 @@ class Server:
             raise error
 
     def send_packet(self, address):
-        packet = "%d" % self.id
 
-        package = SentPackage(packet, self.timestamp())
-        self.save_entry(package)
-        self.id += 1
-        self.server_socket.sendto(packet.encode(), address)
+        async def async_send_packet(address):
+            packet = "%d" % self.id
+            package = SentPackage(packet, self.timestamp())
+            self.save_entry(package)
+            self.id += 1
+            self.server_socket.sendto(packet.encode(), address)
+
+        loop = asyncio.get_event_loop()
+        loop.create_task(async_send_packet(address=address))
 
     def timestamp(self):
         return datetime.now()
