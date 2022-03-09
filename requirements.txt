@@ -7,3 +7,4 @@ Flask~=1.1.2
 matplotlib
 hurry.filesize~=0.9
 Markupsafe~=2.0.1
+dash-bootstrap-components~=1.0.3
