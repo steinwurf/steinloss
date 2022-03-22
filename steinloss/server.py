@@ -152,7 +152,7 @@ class Server:
         while True:
             self.send_packet_batch(address)
             end_time = time.perf_counter()
-            await asyncio.sleep(self.__interval )
+            await asyncio.sleep(self.__interval - (end_time - start_time))
             start_time = time.perf_counter()
 
     def shutdown(self):
