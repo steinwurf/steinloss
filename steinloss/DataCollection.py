@@ -5,8 +5,8 @@ from steinloss.Package import Package, ReceivePackage, SentPackage
 import numpy as np
 from datetime import datetime, timedelta
 import pandas as pd
-#from hurry.filesize import size, verbose
-#import bitmath
+from hurry.filesize import size, verbose
+
 
 
 class DataCollection(metaclass=Singleton):
@@ -106,10 +106,8 @@ class DataCollection(metaclass=Singleton):
         timestamp = datetime.now() - timedelta(seconds=15)  # 15 seconds delayed
         time_entry = time_table[timestamp]  
 
-        """ human_readable_size = bitmath.Byte(bytes=time_entry.sent).best_prefix()
 
-        speed = human_readable_size.format("{value:.2f} {unit}") """
-        speed = 0
+        speed = size(time_entry.sent * 1024, system=verbose)
 
         return speed
 
