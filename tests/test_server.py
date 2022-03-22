@@ -1,4 +1,4 @@
-import asyncio
+""" import asyncio
 import pytest
 
 from datetime import datetime
@@ -84,3 +84,4 @@ class FakeTime:
 
     def sleep(self, seconds):
         self.__time += seconds
+ """
