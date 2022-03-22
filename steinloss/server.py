@@ -30,20 +30,11 @@ class Server:
         self.speed = speed
         self.data_collection = DataCollection()
 
-
-        self.batch_size = 50 # how much data to send in a batch in kilobytes
+        self.batch_size = 50   # how much data to send in a batch in kilobytes
         self.__interval = self.batch_size / self.speed * 1024
 
         # making the port and host reusable:
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
-    """ @property
-    def speed(self):
-        return 1 / self.__interval * self.packet_size
-
-    @speed.setter
-    def speed(self, value):
-        self.__interval = self.packet_size / value """
 
     @property
     def interval(self):
@@ -148,7 +139,7 @@ class Server:
 
     async def serve_forever(self, address):
         start_time = 0
-        end_time = 0    
+        end_time = 0
         while True:
             self.send_packet_batch(address)
             end_time = time.perf_counter()

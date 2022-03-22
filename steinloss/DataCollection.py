@@ -8,7 +8,6 @@ import pandas as pd
 from hurry.filesize import size, verbose
 
 
-
 class DataCollection(metaclass=Singleton):
     def __init__(self) -> None:
         self.time_table = TimeTable()
@@ -104,8 +103,7 @@ class DataCollection(metaclass=Singleton):
         time_table = self.get_time_table()
 
         timestamp = datetime.now() - timedelta(seconds=15)  # 15 seconds delayed
-        time_entry = time_table[timestamp]  
-
+        time_entry = time_table[timestamp]
 
         speed = size(time_entry.sent * 1024, system=verbose)
 
