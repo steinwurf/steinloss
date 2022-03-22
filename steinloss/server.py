@@ -27,20 +27,14 @@ class Server:
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.listening_address = (ip, port)
         self.id = 0
-        self.__interval = 1
         self.speed = speed
         self.data_collection = DataCollection()
 
+        self.batch_size = 50   # how much data to send in a batch in kilobytes
+        self.__interval = self.batch_size / self.speed * 1024
+
         # making the port and host reusable:
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
-    @property
-    def speed(self):
-        return 1 / self.__interval * self.packet_size
-
-    @speed.setter
-    def speed(self, value):
-        self.__interval = self.packet_size / value
 
     @property
     def interval(self):
@@ -71,13 +65,17 @@ class Server:
             self.shutdown()
             raise error
 
-    def send_packet(self, address):
-        packet = "%d" % self.id
+    def send_packet_batch(self, address):
+        async def async_send_packet(address):
+            packet = "%d" % self.id
+            package = SentPackage(packet, self.timestamp())
+            self.save_entry(package)
+            self.id += 1
+            self.server_socket.sendto(packet.encode(), address)
 
-        package = SentPackage(packet, self.timestamp())
-        self.save_entry(package)
-        self.id += 1
-        self.server_socket.sendto(packet.encode(), address)
+        loop = asyncio.get_event_loop()
+        for _ in range(self.batch_size):
+            loop.create_task(async_send_packet(address=address))
 
     def timestamp(self):
         return datetime.now()
@@ -94,7 +92,6 @@ class Server:
         return address
 
     def run_loop(self, address):
-
         # loop part
         loop = asyncio.get_event_loop()
 
@@ -141,14 +138,16 @@ class Server:
             end='\r')
 
     async def serve_forever(self, address):
-        start_time = time.time()
+        start_time = 0
+        end_time = 0
         while True:
-            self.send_packet(address)
-            await asyncio.sleep(self.__interval - (time.time() - start_time) % self.__interval)
+            self.send_packet_batch(address)
+            end_time = time.perf_counter()
+            await asyncio.sleep(self.__interval - (end_time - start_time))
+            start_time = time.perf_counter()
 
     def shutdown(self):
         self.server_socket.close()
-
         tasks = asyncio.Task.all_tasks()
         for task in tasks:
             task.cancel()
