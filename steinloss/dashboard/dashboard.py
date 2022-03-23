@@ -38,7 +38,8 @@ app.layout = html.Div([
         )
     ]),
 
-    html.Div([dbc.Button(id='download_button', children=['Download data']), dcc.Download(id='download_component')]),
+    html.Div([dbc.Button(id='download_button_time', children=['Download time data']), dcc.Download(id='download_component_time')]),
+    html.Div([dbc.Button(id='download_button_packet', children=['Download packet data']), dcc.Download(id='download_component_packet')]),
 ])
 
 start = datetime.now()
@@ -81,7 +82,7 @@ def update_graph_live(n):
               [Input('interval-component', 'n_intervals')])
 def update_sent_lost(n):
     data_collection = DataCollection()
-    df = data_collection.retrieve_sent_recieved_packets_df()
+    df = data_collection.retrieve_sent_recieved_packets_over_time_df()
 
     # Create the figure
     fig = go.Figure()
@@ -96,21 +97,31 @@ def update_sent_lost(n):
     return fig
 
 
-@app.callback(Output('download_component', 'data'),
-              Input('download_button', 'n_clicks'),
+@app.callback(Output('download_component_time', 'data'),
+              Input('download_button_time', 'n_clicks'),
               prevent_initial_call=True)
 def download_data(n_clicks):
     data_collection = DataCollection()
     df = data_collection.retrieve_lost_percentage_over_time()
 
-    return dcc.send_data_frame(df.to_csv, "package_data.csv")
+    return dcc.send_data_frame(df.to_csv, "packet_time_data.csv")
+
+
+@app.callback(Output('download_component_packet', 'data'),
+              Input('download_button_packet', 'n_clicks'),
+              prevent_initial_call=True)
+def download_data(n_clicks):
+    data_collection = DataCollection()
+    df = data_collection.retrieve_individual_packet_df()
+
+    return dcc.send_data_frame(df.to_csv, "packet_data.csv")
 
 
 @app.callback(Output('distribution', 'figure'),
               [Input('interval-component', 'n_intervals')])
 def update_distributions(n):
     data_collection = DataCollection()
-    df_sent_recieved = data_collection.retrieve_sent_recieved_packets_df()
+    df_sent_recieved = data_collection.retrieve_sent_recieved_packets_over_time_df()
     df_loss_pct = data_collection.retrieve_lost_percentage_over_time()
 
     # The first datapoints arent relavent due to the server starting up.

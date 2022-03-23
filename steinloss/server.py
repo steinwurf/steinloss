@@ -127,7 +127,7 @@ class Server:
     def log(self):
         one_second_in_the_past = datetime.now() - timedelta(seconds=2)
 
-        packet_loss = self.data_collection.get_package_loss_time(one_second_in_the_past)
+        packet_loss = self.data_collection.get_package_loss_from_time(one_second_in_the_past)
 
         sent = self.data_collection.get_time_table()[one_second_in_the_past].sent
         received = self.data_collection.get_time_table()[one_second_in_the_past].received

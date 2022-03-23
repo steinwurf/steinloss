@@ -9,10 +9,13 @@ class TimeEntry:
         self.received = 0
 
     def add_packet(self, packet):
-        if type(packet) is SentPackage:
+        if type(packet) is SentPackage: 
             self.sent += 1
+            # By default the packet is declared lost
             self.loss += 1
         elif type(packet) is ReceivePackage:
+            # When/if a packet is recieved it is registered as not lost
+            self.loss -= 1
             self.received += 1
 
     def __repr__(self):

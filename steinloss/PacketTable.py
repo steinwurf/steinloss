@@ -1,5 +1,5 @@
 from datetime import datetime
-
+from steinloss.Package import ReceivePackage, SentPackage
 
 class PacketEntry:
     sent_at: datetime
@@ -18,6 +18,11 @@ class PacketEntry:
     def __repr__(self):
         return f"{type(self).__name__}: sent:{self.sent_at} → recv:{self.received_at}"
 
+    def add_packet(self, packet):
+        if type(packet) is SentPackage:
+            self.sent_at = packet.time
+        elif type(packet) is ReceivePackage:
+            self.received_at = packet.time
 
 class PacketTable(dict):
     def __getitem__(self, key) -> PacketEntry:
@@ -30,3 +35,5 @@ class PacketTable(dict):
 
     def __iter__(self):
         return super().__iter__()
+
+    

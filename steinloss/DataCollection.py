@@ -1,11 +1,12 @@
 from steinloss.class_patterns import Singleton
 from steinloss.TimeTable import TimeTable
 from steinloss.PacketTable import PacketTable
-from steinloss.Package import Package, ReceivePackage, SentPackage
+from steinloss.Package import Package
 import numpy as np
 from datetime import datetime, timedelta
 import pandas as pd
 from hurry.filesize import size, verbose
+import copy
 
 
 class DataCollection(metaclass=Singleton):
@@ -20,14 +21,11 @@ class DataCollection(metaclass=Singleton):
         return self.packet_table
 
     def add(self, packet: Package):
-        if type(packet) is SentPackage:
-            self.packet_table[packet.id].sent_at = packet.time
-        elif type(packet) is ReceivePackage:
-            self.packet_table[packet.id].received_at = packet.time
 
-            sent_timestamp = self.packet_table[packet.id].sent_at
-            self.time_table[sent_timestamp].loss -= 1
+        # Register the packet in the packettable
+        self.packet_table[packet.id].add_packet(packet)
 
+        # Register the packet in the timetable.
         self.time_table[packet.time].add_packet(packet)
 
     def __contains__(self, item):
@@ -80,7 +78,7 @@ class DataCollection(metaclass=Singleton):
         df = pd.DataFrame.from_dict(data)
         return df
 
-    def retrieve_sent_recieved_packets_df(self):
+    def retrieve_sent_recieved_packets_over_time_df(self):
         data = {
             'time': [],
             'sent-count': [],
@@ -109,7 +107,7 @@ class DataCollection(metaclass=Singleton):
 
         return speed
 
-    def get_package_loss_time(self, timestamp: datetime):
+    def get_package_loss_from_time(self, timestamp: datetime):
         time_entry = self.time_table[timestamp]
 
         packages_sent = time_entry.sent
@@ -119,3 +117,28 @@ class DataCollection(metaclass=Singleton):
             return 0
         else:
             return 1 - packages_recv / packages_sent
+
+    def retrieve_individual_packet_df(self):
+        data = {
+            'packet_id' : [],
+            'sent_at' : [],
+            'recieved_at' : [],
+            'recieved' : [],
+        }
+        
+        copy_of_packet_table = copy.deepcopy(dict(self.packet_table))
+
+        for packet_id in copy_of_packet_table:
+            data['packet_id'].append(packet_id)
+
+            data['sent_at'].append(copy_of_packet_table[packet_id].sent_at)
+
+            data['recieved_at'].append(copy_of_packet_table[packet_id].received_at)
+
+            if copy_of_packet_table[packet_id].received_at is None:
+                data['recieved'].append(False)
+            else:
+                data['recieved'].append(True)
+        df = pd.DataFrame.from_dict(data)
+        return df
+
