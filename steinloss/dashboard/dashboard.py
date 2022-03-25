@@ -123,32 +123,45 @@ def update_distributions(n):
     data_collection = DataCollection()
     df_sent_recieved = data_collection.retrieve_sent_recieved_packets_over_time_df()
     df_loss_pct = data_collection.retrieve_lost_percentage_over_time()
+    df_consecutive_lost_packets = data_collection.retrieve_count_of_consecutive_lost_packets()
 
     # The first datapoints arent relavent due to the server starting up.
-    df_sent_recieved_filtered = df_sent_recieved[df_sent_recieved['sent-count'] > 800]
     df_loss_pct_filtered = df_loss_pct[df_loss_pct['loss'] > 0]
+    df_sent_filtered = df_sent_recieved[df_sent_recieved['sent-count'] > 0]
+    df_recieved_filtered = df_sent_recieved[df_sent_recieved['recieved-count'] > 0]
+    df_consecutive_lost_packets_filtered = df_consecutive_lost_packets[df_consecutive_lost_packets['count'] > 0]
 
-    fig = make_subplots(rows=1,
+
+
+
+    fig = make_subplots(rows=2,
                         cols=3,
-                        subplot_titles=['Packet Loss in Percent', 'Count of Recieved Packets', 'Count of Sent Packets'])
+                        subplot_titles=['Packet Loss in Percent', 'Count of Recieved Packets', 'Count of Sent Packets', 'Count of Consecutive Lost Packets'])
 
-    # lost-pct
+    # Lost-pct
     fig.add_trace(go.Histogram(x=df_loss_pct_filtered['loss'],
                                histnorm='probability'),
                   row=1,
                   col=1)
 
-    # recieved
-    fig.add_trace(go.Histogram(x=df_sent_recieved_filtered['recieved-count'],
+    # Recieved
+    fig.add_trace(go.Histogram(x=df_sent_filtered['recieved-count'],
                                histnorm='probability'),
                   row=1,
                   col=2)
 
-    # sent histogram:
-    fig.add_trace(go.Histogram(x=df_sent_recieved_filtered['sent-count'],
+    # Sent histogram:
+    fig.add_trace(go.Histogram(x=df_recieved_filtered['sent-count'],
                                histnorm='probability'),
                   row=1,
                   col=3)
+
+    # Count of consecutive lost packets
+    fig.add_trace(go.Histogram(x=df_consecutive_lost_packets_filtered['count'],
+                            histnorm='probability'),
+                row=2,
+                col=1)
+
 
     fig.update_layout(showlegend=False)
     return fig
