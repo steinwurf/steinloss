@@ -48,7 +48,6 @@ class Probe:
             lost_pct = self.lost / self.sequence_number
         print(
             f"received message: {self.sequence_number} | probe id: {self.id} | ",
-            "server->probe loss: {:.2f}%".format(lost_pct * 100),
             end='\r')
 
     def respond_to_server(self, packet: str):

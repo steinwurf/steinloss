@@ -4,10 +4,9 @@ import time
 from datetime import datetime, timedelta
 from typing import Tuple
 
-from steinloss import log
-from steinloss.Data_Presenter import Data_Presenter
-from steinloss.package import SentPackage, ReceivePackage, Package
-
+from steinloss.Package import SentPackage, ReceivePackage, Package
+from steinloss.utilities import log
+from steinloss.DataCollection import DataCollection
 ONE_SECOND = 1
 
 kilobyte = 1024
@@ -28,17 +27,14 @@ class Server:
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.listening_address = (ip, port)
         self.id = 0
-        self.__interval = 1
         self.speed = speed
-        self.data_presenter = Data_Presenter.get_instance()
+        self.data_collection = DataCollection()
 
-    @property
-    def speed(self):
-        return 1 / self.__interval * self.packet_size
+        self.batch_size = 50   # how much data to send in a batch in kilobytes
+        self.__interval = self.batch_size / self.speed * 1024
 
-    @speed.setter
-    def speed(self, value):
-        self.__interval = self.packet_size / value
+        # making the port and host reusable:
+        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     @property
     def interval(self):
@@ -69,13 +65,17 @@ class Server:
             self.shutdown()
             raise error
 
-    def send_packet(self, address):
-        packet = "%d" % self.id
+    def send_packet_batch(self, address):
+        async def async_send_packet(address):
+            packet = "%d" % self.id
+            package = SentPackage(packet, self.timestamp())
+            self.save_entry(package)
+            self.id += 1
+            self.server_socket.sendto(packet.encode(), address)
 
-        package = SentPackage(packet, self.timestamp())
-        self.save_entry(package)
-        self.id += 1
-        self.server_socket.sendto(packet.encode(), address)
+        loop = asyncio.get_event_loop()
+        for _ in range(self.batch_size):
+            loop.create_task(async_send_packet(address=address))
 
     def timestamp(self):
         return datetime.now()
@@ -92,7 +92,6 @@ class Server:
         return address
 
     def run_loop(self, address):
-
         # loop part
         loop = asyncio.get_event_loop()
 
@@ -102,7 +101,7 @@ class Server:
         )
         transport, protocol = loop.run_until_complete(listen_task)
 
-        # loop.create_task(self.log_forever())
+        loop.create_task(self.log_forever())
         loop.create_task(self.serve_forever(address))
         # Running part
         log('loop is running')
@@ -118,7 +117,7 @@ class Server:
             self.shutdown()
 
     def save_entry(self, package: Package):
-        self.data_presenter.append(package)
+        self.data_collection.add(package)
 
     async def log_forever(self):
         while True:
@@ -128,10 +127,10 @@ class Server:
     def log(self):
         one_second_in_the_past = datetime.now() - timedelta(seconds=2)
 
-        packet_loss = self.calculate_packet_loss_in_pct(one_second_in_the_past)
+        packet_loss = self.data_collection.get_package_loss_time(one_second_in_the_past)
 
-        sent = self.data_presenter.get_time_table()[one_second_in_the_past].sent
-        received = self.data_presenter.get_time_table()[one_second_in_the_past].received
+        sent = self.data_collection.get_time_table()[one_second_in_the_past].sent
+        received = self.data_collection.get_time_table()[one_second_in_the_past].received
 
         log(f"{sent} packets sent last second |"
             + f" {received} packets received last second ",
@@ -139,25 +138,16 @@ class Server:
             end='\r')
 
     async def serve_forever(self, address):
-        start_time = time.time()
+        start_time = 0
+        end_time = 0
         while True:
-            self.send_packet(address)
-
-            await asyncio.sleep(self.__interval - (time.time() - start_time) % self.__interval)
-
-    def calculate_packet_loss_in_pct(self, timestamp: datetime):
-        time_entry = self.data_presenter.get_time_table()[timestamp]
-        packages_sent = time_entry.sent
-        packages_recv = time_entry.received
-
-        if packages_sent == 0 or packages_recv == 0:
-            return 0
-        else:
-            return 1 - packages_recv / packages_sent
+            self.send_packet_batch(address)
+            end_time = time.perf_counter()
+            await asyncio.sleep(self.__interval - (end_time - start_time))
+            start_time = time.perf_counter()
 
     def shutdown(self):
         self.server_socket.close()
-
         tasks = asyncio.Task.all_tasks()
         for task in tasks:
             task.cancel()
@@ -195,4 +185,4 @@ class EchoServerProtocol(asyncio.DatagramProtocol):
         received_packet = numbers[1]
 
         package = ReceivePackage(sent_packet, received_packet, datetime.now())
-        self.server.data_presenter.append(package)
+        self.server.data_collection.add(package)
