@@ -18,7 +18,7 @@ class Server:
     packet_size = kilobyte
 
     def __init__(self, speed=megabyte, ip='0.0.0.0', port=7070,
-                 runtime_of_test=ONE_SECOND * 60 * 30):
+                 runtime_of_test=ONE_SECOND * 60 * 30, batch_size=50):
         self.last_sent_packet = 0
         self.last_received_packet = 0
         self.time_of_sample_size = runtime_of_test
@@ -27,10 +27,10 @@ class Server:
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.listening_address = (ip, port)
         self.id = 0
-        self.speed = speed
+        self.speed = speed  # The speed in Bytes/s
         self.data_collection = DataCollection()
 
-        self.batch_size = 50   # how much data to send in a batch in kilobytes
+        self.batch_size = batch_size   # how much data to send in a batch in kilobytes
         self.__interval = self.batch_size / self.speed * 1024
 
         # making the port and host reusable:
