@@ -6,9 +6,11 @@ on:
   pull_request:
     branches:
       - master
+      - dev
   push:
     branches: 
       - master
+      - dev
 
 jobs:
   test_and_lint:

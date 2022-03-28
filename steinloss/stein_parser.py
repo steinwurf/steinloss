@@ -3,10 +3,16 @@ from argparse import Action
 from argparse import ArgumentParser
 from threading import Thread
 
-from steinloss import __version__
+""" from steinloss import __version__
+from steinloss.dashboard import dashboard
+from steinloss.probe import Probe
+from steinloss.server import Server """
+
+__version__ = "0.3.6"
 from steinloss.dashboard import dashboard
 from steinloss.probe import Probe
 from steinloss.server import Server
+from steinloss.utilities import log
 
 kilobyte = 1024
 mb = kilobyte * kilobyte
