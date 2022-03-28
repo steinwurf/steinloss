@@ -1,3 +1,4 @@
+from time import time
 from steinloss.class_patterns import Singleton
 from steinloss.TimeTable import TimeTable
 from steinloss.PacketTable import PacketTable
@@ -8,8 +9,10 @@ import pandas as pd
 from hurry.filesize import size, verbose
 import copy
 from itertools import groupby
+import bitmath
 
 
+KILOBYTE = 1024
 
 class DataCollection(metaclass=Singleton):
     def __init__(self) -> None:
@@ -104,9 +107,9 @@ class DataCollection(metaclass=Singleton):
         timestamp = datetime.now() - timedelta(seconds=self.delay)  # 15 seconds delayed
         time_entry = time_table[timestamp]
 
-        speed = size(time_entry.sent * 1024, system=verbose)
+        speed = bitmath.Byte(bytes=time_entry.sent * KILOBYTE).best_prefix()
 
-        return speed
+        return speed.format("{value:.2f} {unit}")
 
     def get_package_loss_from_time(self, timestamp: datetime):
         time_entry = self.time_table[timestamp]
@@ -150,9 +153,9 @@ class DataCollection(metaclass=Singleton):
         return df
 
     def retrieve_count_of_consecutive_lost_packets(self):
-        df_indivdual_packets = self.retrieve_individual_packet_df(5)
+        """ df_indivdual_packets = self.retrieve_individual_packet_df(5)
 
-        """ def return_list_of_consecutive_count(l):
+        def return_list_of_consecutive_count(l):
             return [len(list(g)) for i, g in groupby(l) if i == 0]
 
         list_of_consecutive_lost_packets = return_list_of_consecutive_count(df_indivdual_packets['recieved'])

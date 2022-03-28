@@ -3,13 +3,10 @@ from itertools import groupby
 import time
 
 
-df = pd.read_csv('/home/jeppe/Downloads/packet_data(1).csv')
-def groups(l):
-    return [len(list(g)) for i, g in groupby(l) if i == 0]
+#df = pd.read_csv('/home/jeppe/Downloads/packet_data(1).csv')
 
-start = time.time()
-list = groups(df['recieved'])
-end = time.time()
+import bitmath
 
-final_time = end - start
-print(f'{final_time=}')
+size = bitmath.Byte(bytes=4026).best_prefix()
+
+print(round(size, 2))
