@@ -132,8 +132,6 @@ def update_distributions(n):
     df_consecutive_lost_packets_filtered = df_consecutive_lost_packets[df_consecutive_lost_packets['count'] > 0]
 
 
-
-
     fig = make_subplots(rows=2,
                         cols=3,
                         subplot_titles=['Packet Loss in Percent', 'Count of Recieved Packets', 'Count of Sent Packets', 'Count of Consecutive Lost Packets'])

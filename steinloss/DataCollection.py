@@ -109,7 +109,7 @@ class DataCollection(metaclass=Singleton):
 
         speed = bitmath.Byte(bytes=time_entry.sent * KILOBYTE).best_prefix()
 
-        return speed.format("{value:.2f} {unit}")
+        return speed
 
     def get_package_loss_from_time(self, timestamp: datetime):
         time_entry = self.time_table[timestamp]

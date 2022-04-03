@@ -10,6 +10,7 @@ from steinloss.server import Server """
 
 __version__ = "0.3.6"
 from steinloss.dashboard import dashboard
+
 from steinloss.probe import Probe
 from steinloss.server import Server
 from steinloss.utilities import log
