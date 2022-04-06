@@ -2,7 +2,7 @@ from time import time
 from steinloss.class_patterns import Singleton
 from steinloss.TimeTable import TimeTable
 from steinloss.PacketTable import PacketTable
-from steinloss.Package import Package
+from steinloss.Packet import Packet, ReceivePackage, SentPackage
 import numpy as np
 from datetime import datetime, timedelta
 import pandas as pd
@@ -10,7 +10,8 @@ from hurry.filesize import size, verbose
 import copy
 from itertools import groupby
 import bitmath
-
+from steinloss.ConsecutiveLostPacketsTable import ConsecutiveLostPacketsTable
+import collections
 
 KILOBYTE = 1024
 
@@ -18,6 +19,10 @@ class DataCollection(metaclass=Singleton):
     def __init__(self) -> None:
         self.time_table = TimeTable()
         self.packet_table = PacketTable()
+        self.consecutive_packets_lost_table = ConsecutiveLostPacketsTable()
+        self.packet_queue = collections.deque(maxlen=1000) # The last 200 recieved packets is in this queue
+
+
         self.delay = 15  # Number of seconds the dashboard is behind realtime.
         self.data_interval = 180  # The number of seconds in the data window (only interested in the last two X seconds).
 
@@ -27,16 +32,20 @@ class DataCollection(metaclass=Singleton):
     def get_packet_table(self):
         return self.packet_table
 
-    def add(self, packet: Package):
-
+    def add(self, packet: Packet):
+        i = 0
         # Register the packet in the packettable
         self.packet_table[packet.id].add_packet(packet)
 
         # Register the packet in the timetable.
         self.time_table[packet.time].add_packet(packet)
 
+        # Register sent packet in the packet queue
+        if isinstance(packet, SentPackage):
+            self.packet_queue.appendleft(packet.id)
+        
     def __contains__(self, item):
-        if isinstance(item, Package):
+        if isinstance(item, Packet):
             return item.id in self.packet_table
         elif isinstance(item, datetime):
             return item in self.time_table
@@ -122,7 +131,7 @@ class DataCollection(metaclass=Singleton):
         else:
             return 1 - packages_recv / packages_sent
 
-    def retrieve_individual_packet_df(self, last_X_seconds=None):
+    def retrieve_individual_packet_df_from_seconds(self, last_X_seconds=None):
         if last_X_seconds is None:
             last_X_seconds = self.data_interval
 
@@ -152,15 +161,43 @@ class DataCollection(metaclass=Singleton):
         df = pd.DataFrame.from_dict(data)
         return df
 
+    def retrieve_individual_packet_df_from_packets(self, list_of_packet_id = None):
+        if list_of_packet_id is None:
+            return None
+        data = {
+            'packet_id' : [],
+            'sent_at' : [],
+            'recieved_at' : [],
+            'recieved' : [],
+        }
+
+        #snapshot_packet_table = dict(self.packet_table)
+        #copy_of_packet_table = copy.deepcopy(filtered_packet_table)
+
+        for packet_id in list_of_packet_id:
+            data['packet_id'].append(packet_id)
+
+            data['sent_at'].append(self.packet_table[packet_id].sent_at)
+
+            data['recieved_at'].append(self.packet_table[packet_id].received_at)
+
+            if self.packet_table[packet_id].received_at is None:
+                data['recieved'].append(False)
+            else:
+                data['recieved'].append(True)
+        df = pd.DataFrame.from_dict(data)
+        return df
+        
+
+
     def retrieve_count_of_consecutive_lost_packets(self):
-        """ df_indivdual_packets = self.retrieve_individual_packet_df(5)
+        df_indivdual_packets = self.retrieve_individual_packet_df_from_packets(self.packet_queue)
 
         def return_list_of_consecutive_count(l):
             return [len(list(g)) for i, g in groupby(l) if i == 0]
 
         list_of_consecutive_lost_packets = return_list_of_consecutive_count(df_indivdual_packets['recieved'])
 
-        df = pd.DataFrame(list_of_consecutive_lost_packets, columns=['count']) """
-        df = pd.DataFrame(columns=['count'])
+        df = pd.DataFrame(list_of_consecutive_lost_packets, columns=['count'])
 
         return df

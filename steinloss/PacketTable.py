@@ -1,5 +1,6 @@
 from datetime import datetime
-from steinloss.Package import ReceivePackage, SentPackage
+from steinloss.Packet import ReceivePackage, SentPackage
+import numpy as np
 
 class PacketEntry:
     sent_at: datetime
@@ -35,5 +36,6 @@ class PacketTable(dict):
 
     def __iter__(self):
         return super().__iter__()
+
 
     

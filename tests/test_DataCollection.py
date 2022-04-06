@@ -3,7 +3,7 @@ from sqlite3 import DatabaseError
 import pytest
 from datetime import datetime
 from steinloss.DataCollection import DataCollection
-from steinloss.Package import SentPackage, ReceivePackage
+from steinloss.Packet import SentPackage, ReceivePackage
 from freezegun import freeze_time
 
 

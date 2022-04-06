@@ -1,4 +1,4 @@
-from steinloss.Package import Package, ReceivePackage, SentPackage
+from steinloss.Packet import Packet, ReceivePackage, SentPackage
 from datetime import datetime
 
 

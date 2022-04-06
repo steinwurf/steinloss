@@ -4,7 +4,7 @@ import time
 from datetime import datetime, timedelta
 from typing import Tuple
 
-from steinloss.Package import SentPackage, ReceivePackage, Package
+from steinloss.Packet import SentPackage, ReceivePackage, Packet
 from steinloss.utilities import log
 from steinloss.DataCollection import DataCollection
 ONE_SECOND = 1
@@ -116,7 +116,7 @@ class Server:
             transport.close()
             self.shutdown()
 
-    def save_entry(self, package: Package):
+    def save_entry(self, package: Packet):
         self.data_collection.add(package)
 
     async def log_forever(self):
