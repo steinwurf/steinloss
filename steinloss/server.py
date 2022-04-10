@@ -185,4 +185,4 @@ class EchoServerProtocol(asyncio.DatagramProtocol):
         received_packet = numbers[1]
 
         package = ReceivePackage(sent_packet, received_packet, datetime.now())
-        self.server.data_collection.add(package)
+        self.server.data_collection.add(package)        

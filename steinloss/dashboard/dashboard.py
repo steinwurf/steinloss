@@ -123,13 +123,13 @@ def update_distributions(n):
     data_collection = DataCollection()
     df_sent_recieved = data_collection.retrieve_sent_recieved_packets_over_time_df()
     df_loss_pct = data_collection.retrieve_lost_percentage_over_time()
-    df_consecutive_lost_packets = data_collection.retrieve_count_of_consecutive_lost_packets()
+    df_consecutive_lost_packets = data_collection.get_consecutive_packets_lost_df()
 
     # The first datapoints arent relavent due to the server starting up.
     df_loss_pct_filtered = df_loss_pct[df_loss_pct['loss'] > 0]
     df_sent_filtered = df_sent_recieved[df_sent_recieved['sent-count'] > 0]
     df_recieved_filtered = df_sent_recieved[df_sent_recieved['recieved-count'] > 0]
-    df_consecutive_lost_packets_filtered = df_consecutive_lost_packets[df_consecutive_lost_packets['count'] > 0]
+
 
 
     fig = make_subplots(rows=2,
@@ -155,11 +155,10 @@ def update_distributions(n):
                   col=3)
 
     # Count of consecutive lost packets
-    fig.add_trace(go.Histogram(x=df_consecutive_lost_packets_filtered['count'],
-                            histnorm='probability'),
+    fig.add_trace(go.Bar(x=df_consecutive_lost_packets['lost_cons_packets'],
+                            y=df_consecutive_lost_packets['count']),
                 row=2,
                 col=1)
-
 
     fig.update_layout(showlegend=False)
     return fig

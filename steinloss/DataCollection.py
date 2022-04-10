@@ -1,3 +1,4 @@
+from struct import pack
 from time import time
 from steinloss.class_patterns import Singleton
 from steinloss.TimeTable import TimeTable
@@ -20,7 +21,7 @@ class DataCollection(metaclass=Singleton):
         self.time_table = TimeTable()
         self.packet_table = PacketTable()
         self.consecutive_packets_lost_table = ConsecutiveLostPacketsTable()
-        self.packet_queue = collections.deque(maxlen=1000) # The last 200 recieved packets is in this queue
+        self.recieved_packet_queue = collections.deque(maxlen=200) # The last 200 recieved packets is in this queue, must be the samme as in add methode (before %)
 
 
         self.delay = 15  # Number of seconds the dashboard is behind realtime.
@@ -31,19 +32,29 @@ class DataCollection(metaclass=Singleton):
 
     def get_packet_table(self):
         return self.packet_table
+    def get_consecutive_packets_lost_table(self):
+        return self.consecutive_packets_lost_table
+    
+    def get_consecutive_packets_lost_df(self):
+        df = pd.DataFrame(self.consecutive_packets_lost_table.items(),columns=['lost_cons_packets','count'])
+        return df
 
     def add(self, packet: Packet):
-        i = 0
         # Register the packet in the packettable
         self.packet_table[packet.id].add_packet(packet)
 
         # Register the packet in the timetable.
         self.time_table[packet.time].add_packet(packet)
 
-        # Register sent packet in the packet queue
-        if isinstance(packet, SentPackage):
-            self.packet_queue.appendleft(packet.id)
-        
+        # Register recieved packet in the packet queue
+        if isinstance(packet, ReceivePackage):
+            self.recieved_packet_queue.appendleft(int(packet.id))
+
+        # Register all the packets in the recieved package queue in the consecutive pakcet lost table
+            if int(packet.id) % 200 == 0:
+                self.consecutive_packets_lost_table.add(self.recieved_packet_queue)
+
+
     def __contains__(self, item):
         if isinstance(item, Packet):
             return item.id in self.packet_table
@@ -189,9 +200,8 @@ class DataCollection(metaclass=Singleton):
         return df
         
 
-
     def retrieve_count_of_consecutive_lost_packets(self):
-        df_indivdual_packets = self.retrieve_individual_packet_df_from_packets(self.packet_queue)
+        df_indivdual_packets = self.retrieve_individual_packet_df_from_packets(self.recieved_packet_queue)
 
         def return_list_of_consecutive_count(l):
             return [len(list(g)) for i, g in groupby(l) if i == 0]

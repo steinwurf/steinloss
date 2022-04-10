@@ -22,7 +22,7 @@ class PacketEntry:
     def add_packet(self, packet):
         if type(packet) is SentPackage:
             self.sent_at = packet.time
-        elif type(packet) is ReceivePackage:
+        if type(packet) is ReceivePackage:
             self.received_at = packet.time
 
 class PacketTable(dict):

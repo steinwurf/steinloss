@@ -9,7 +9,7 @@ from steinloss.probe import Probe
 from steinloss.server import Server """
 
 __version__ = "0.3.6"
-from steinloss.dashboard import dashboard
+from steinloss.dashboard import dashboardv2
 
 from steinloss.probe import Probe
 from steinloss.server import Server
@@ -104,6 +104,6 @@ class FrontEndAndBackEnd:
         t = Thread(target=udp_socket.run)
         try:
             t.start()
-            dashboard.run()
+            dashboardv2.run()
         finally:
             t.join()

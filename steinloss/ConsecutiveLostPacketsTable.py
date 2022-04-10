@@ -8,12 +8,28 @@ class ConsecutiveLostPacketsTable(dict):
         super(ConsecutiveLostPacketsTable,self).__init__(*args, **kw)
         self.itemlist = super(ConsecutiveLostPacketsTable, self).keys()
 
-    def collect_data(self, packet:Packet, packet_table:PacketTable):
-        """ if int(packet.id) > 5:
-            i = 0
-            while packet_table[int(packet.id) - (i + 1)].received_at == None:
-                i += 1
-            if i != 0: 
-                log('')
-            else: 
-                pass """
+    def add(self, list_of_recieved_packets):
+        # These two functions are needed to first calculate the missing values in the recieved packets list
+        # and afterwards count the consecutive value in the list
+        def missing_elements(L):
+            return sorted(set(range(L[-1], L[0])) - set(L))
+
+        def count_consec(lst):
+            consec = [1]
+            for x, y in zip(lst, lst[1:]):
+                if x == y - 1:
+                    consec[-1] += 1
+                else:
+                    consec.append(1)
+            return consec
+
+
+        missing_packets =  missing_elements(list_of_recieved_packets)
+        cons_value = count_consec(missing_packets)
+        # Add the values to the 
+        for i in cons_value:
+            if i in self.keys():
+                self[i] += 1
+            else:
+                self[i] = 1
+
