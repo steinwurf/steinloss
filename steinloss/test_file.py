@@ -1,9 +1,6 @@
-import pandas as pd
-import plotly.graph_objects as go
+import bitmath
+size = 3800 * 1024
 
-dict1 = {1:200, 2:13}
+speed = bitmath.Byte(bytes= size).best_prefix()
 
-df = pd.DataFrame(dict1.items(),columns=['lost_cons_packets','count'])
-fig = go.Figure(go.Bar(x=df['lost_cons_packets'], y=df['count']))
-fig.show()
-
+print(float(speed), type(speed.unit))
