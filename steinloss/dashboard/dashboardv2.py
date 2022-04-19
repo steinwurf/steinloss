@@ -28,22 +28,22 @@ app.layout = html.Div([
                 dcc.Graph(id='lost-percent-graph')
             ], width=8, style={'margin-right':'10px', 'margin-left':'20px', 'margin-top':'10px', 'margin-bottom':'10px'}),
             dbc.Col([
-                dcc.Textarea(id='status-report', value= 'Here you can see the status of the system')
-            ], width=3)
+                html.Div([
+                    html.H3('Status Report', style={'textAlign':'center', 'color':'black'}),
+                    html.P(html.Span(id='status-report'))], 
+                    style={'backgroundColor':'white', 'margin-right':'10px', 'margin-left':'0px', 'margin-top':'10px', 'margin-bottom':'10px'}
+                ),
+                html.Div([dbc.Button(id='download_button_time', children=['Download time data']), dcc.Download(id='download_component_time')]),
+                html.Div([dbc.Button(id='download_button_packet', children=['Download packet data']), dcc.Download(id='download_component_packet')])]
+            , width=3)
         ]),
-    
+
         dbc.Row([
             dbc.Col([
                 dcc.Graph(id='cons_lost_packets')
             ], width=8, style={'margin-right':'10px', 'margin-left':'20px', 'margin-top':'10px', 'margin-bottom':'10px'}),
             dbc.Col([
-                daq.Gauge(
-                    id='speed_gauge',
-                    label="Speed",
-                    value=6,
-                    showCurrentValue=True,
-                    units= 'B/s'
-                )
+                # Empty column
             ], width=3)
         ]),
 
@@ -53,9 +53,6 @@ app.layout = html.Div([
             n_intervals=0
         )
     ]),
-
-    html.Div([dbc.Button(id='download_button_time', children=['Download time data']), dcc.Download(id='download_component_time')]),
-    html.Div([dbc.Button(id='download_button_packet', children=['Download packet data']), dcc.Download(id='download_component_packet')]),
 ])
 
 @app.callback(Output('lost-percent-graph', 'figure'),
@@ -91,10 +88,11 @@ def update_lost_prc_graph(n):
 def update_cons_lost_packets(n):
     data_collection = DataCollection()
     df_consecutive_lost_packets = data_collection.get_consecutive_packets_lost_df()
+
     fig = go.Figure()
 
     fig.add_trace(go.Bar(x=df_consecutive_lost_packets['lost_cons_packets'],
-                            y=df_consecutive_lost_packets['count'],
+                            y=df_consecutive_lost_packets['normalized_count'],
                             marker=dict(color='#6AB187'))
     )
     fig.update_layout(
@@ -111,18 +109,51 @@ def update_cons_lost_packets(n):
 
     return fig
 
-@app.callback([Output('speed_gauge', 'value'), 
-                Output('speed_gauge', 'units')],
-              [Input('interval-component', 'n_intervals')])
-def update_metrics(n):
-   
+
+@app.callback(Output('status-report', 'children'),
+              Input('interval-component', 'n_intervals'))
+def update_status(n):
+    style = {'padding': '10px', 'display': 'inline-block'}
+
     data_collection = DataCollection()
-    speed = data_collection.get_actual_package_speed()
 
-    return float(speed), f'{speed.unit}/s'
+    server_status, probe_status, sent_packets, recv_packets, latency, speed = data_collection.get_status_report()
+
+    return [
+        html.Span([f'Server status: {server_status}',
+                    html.Br(),
+                    f'Probe status: {probe_status}',
+                    html.Br(),
+                    f'Sent packets: {sent_packets}',
+                    html.Br(),
+                    f'Recieved packets: {recv_packets}',
+                    html.Br(),
+                    f'Latency: {latency} ms',
+                    html.Br(),
+                    f'Speed: {speed}'], style=style)
+    ]
+
+@app.callback(Output('download_component_time', 'data'),
+              Input('download_button_time', 'n_clicks'),
+              prevent_initial_call=True)
+def download_data(n_clicks):
+    data_collection = DataCollection()
+    df = data_collection.retrieve_lost_percentage_over_time()
+
+    return dcc.send_data_frame(df.to_csv, "packet_time_data.csv")
 
 
+@app.callback(Output('download_component_packet', 'data'),
+              Input('download_button_packet', 'n_clicks'),
+              prevent_initial_call=True)
+def download_data(n_clicks):
+    data_collection = DataCollection()
+    df = data_collection.retrieve_individual_packet_df_from_seconds()
 
+    df.drop(['sent_at', 'recieved_at'], inplace=True, axis=1)
+
+    dict1 = {1:1, 2:2}
+    #return dcc.send_data_frame(df.to_json, "packet_time_data.json", orient='records')
 def run():
     app.run_server(host='0.0.0.0', port=8050, debug=True)
 

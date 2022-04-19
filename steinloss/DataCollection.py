@@ -1,3 +1,4 @@
+from calendar import c
 from struct import pack
 from time import time
 from steinloss.class_patterns import Singleton
@@ -21,11 +22,12 @@ class DataCollection(metaclass=Singleton):
         self.time_table = TimeTable()
         self.packet_table = PacketTable()
         self.consecutive_packets_lost_table = ConsecutiveLostPacketsTable()
-        self.recieved_packet_queue = collections.deque(maxlen=200) # The last 200 recieved packets is in this queue, must be the samme as in add methode (before %)
+        self.latency = None
 
-
-        self.delay = 15  # Number of seconds the dashboard is behind realtime.
+        self.delay = 1  # Number of seconds the dashboard is behind realtime.
         self.data_interval = 180  # The number of seconds in the data window (only interested in the last two X seconds).
+        self.queue_size = 200
+        self.recieved_packet_queue = collections.deque(maxlen=self.queue_size) # The last 200 recieved packets is in this queue, must be the samme as in add methode (before %)
 
     def get_time_table(self):
         return self.time_table
@@ -37,6 +39,10 @@ class DataCollection(metaclass=Singleton):
     
     def get_consecutive_packets_lost_df(self):
         df = pd.DataFrame(self.consecutive_packets_lost_table.items(),columns=['lost_cons_packets','count'])
+
+        #add normalized count
+        df['normalized_count'] = df['count']/df['count'].sum()
+
         return df
 
     def add(self, packet: Packet):
@@ -50,9 +56,14 @@ class DataCollection(metaclass=Singleton):
         if isinstance(packet, ReceivePackage):
             self.recieved_packet_queue.appendleft(int(packet.id))
 
-        # Register all the packets in the recieved package queue in the consecutive pakcet lost table
-            if int(packet.id) % 200 == 0:
+            # Register all the packets in the recieved package queue in the consecutive pakcet lost table
+            if int(packet.id) % self.queue_size == 0:
                 self.consecutive_packets_lost_table.add(self.recieved_packet_queue)
+
+            # Update the latency
+            latency_datetime = self.packet_table[packet.id].received_at - self.packet_table[packet.id].sent_at
+            latency_miliseconds = latency_datetime.total_seconds() * 1000
+            self.latency = latency_miliseconds
 
 
     def __contains__(self, item):
@@ -85,7 +96,7 @@ class DataCollection(metaclass=Singleton):
             'loss': [],
         }
         time_table = self.time_table
-        base = datetime.now() - timedelta(seconds= self.delay)  # 30 seconds behind
+        base = datetime.now() - timedelta(seconds= self.delay) 
 
         data['time'] = np.array([base - timedelta(seconds=i) for i in range(1, self.data_interval)])
 
@@ -124,10 +135,13 @@ class DataCollection(metaclass=Singleton):
     def get_actual_package_speed(self):
         time_table = self.get_time_table()
 
-        timestamp = datetime.now() - timedelta(seconds=self.delay)  # 15 seconds delayed
+        timestamp = datetime.now() - timedelta(seconds=self.delay)
         time_entry = time_table[timestamp]
 
         speed = bitmath.Byte(bytes=time_entry.sent * KILOBYTE).best_prefix()
+
+        # Round speed 
+        speed = f'{round(float(speed),2)} {speed.unit}'
 
         return speed
 
@@ -182,9 +196,6 @@ class DataCollection(metaclass=Singleton):
             'recieved' : [],
         }
 
-        #snapshot_packet_table = dict(self.packet_table)
-        #copy_of_packet_table = copy.deepcopy(filtered_packet_table)
-
         for packet_id in list_of_packet_id:
             data['packet_id'].append(packet_id)
 
@@ -211,3 +222,37 @@ class DataCollection(metaclass=Singleton):
         df = pd.DataFrame(list_of_consecutive_lost_packets, columns=['count'])
 
         return df
+
+
+    def get_status_report(self):
+        server_status = 'Shutdown'
+        probe_status = 'Shutdown'
+        latency = None
+        sent_packets = None
+        recv_packets = None
+        speed = 0
+
+        time_table = self.get_time_table()
+
+        timestamp = datetime.now() - timedelta(seconds=self.delay)
+        time_entry = time_table[timestamp]
+
+        # Check if the server is running
+
+        if time_entry.sent != 0:
+            server_status = 'Running'
+
+        if time_entry.received != 0:
+            probe_status = 'Running'
+        
+        # Sent/recv packets 
+        
+        sent_packets = time_entry.sent
+        recv_packets = time_entry.received
+
+        # Get the speed
+        speed = self.get_actual_package_speed()
+
+        latency = self.latency
+
+        return server_status, probe_status, sent_packets, recv_packets, latency, speed

@@ -29,7 +29,8 @@ class SpeedConverter(Action):
             '512kb': 512 * kilobyte,
             '4mb': 4 * mb,
             '8mb': 8 * mb,
-            '16mb': 16 * mb
+            '16mb': 16 * mb,
+            '1mb': 1 * mb
         }
         self.help = f"Choose from one of the preset speeds: {list(self.speeds.keys())}," \
                     " or input your own speed in a bytes/sec. Default is 4mb"

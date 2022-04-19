@@ -1,6 +1,4 @@
-import bitmath
-size = 3800 * 1024
+import pandas as pd 
 
-speed = bitmath.Byte(bytes= size).best_prefix()
-
-print(float(speed), type(speed.unit))
+df = pd.read_csv('/home/jeppe/Downloads/packet_time_data(5).csv')
+df.to_json('test', orient='records')
